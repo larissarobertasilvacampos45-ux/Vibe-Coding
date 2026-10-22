@@ -1,14 +1,14 @@
-# Acompanhamento de Projetos
+# Sistema de Gestão de Projetos
 
-Aplicação web simples em Python para acompanhar projetos, progresso, prazos e riscos. Desenvolvida como projeto de portfólio para demonstrar práticas de PMO e implantação de sistemas.
+Aplicação web em Python com Streamlit para demonstrar práticas de PMO e implantação de sistemas. O sistema permite cadastrar projetos, acompanhar prazos e progresso e registrar riscos.
 
 ## Funcionalidades
 
-- Cadastro e atualização de projetos: nome, responsável, status, datas, progresso e observações.
-- Painel com indicadores de projetos, prazos e riscos altos em aberto.
-- Registro de riscos com probabilidade, impacto e cálculo automático de nível (baixo, médio ou alto).
+- Cadastro, edição e exclusão de projetos.
+- Acompanhamento de responsável, status, datas, progresso e observações.
+- Painel com indicadores de projetos ativos, projetos atrasados e riscos altos em aberto.
+- Registro de riscos por projeto, com probabilidade, impacto e nível calculado automaticamente.
 - Plano de resposta/mitigação e atualização da situação dos riscos.
-- Persistência local usando SQLite.
 
 ## Executar localmente
 
@@ -22,21 +22,27 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-O navegador abrirá o sistema localmente. Os dados são salvos no arquivo `projetos.db`, criado automaticamente ao executar o aplicativo. Esse arquivo é local e não deve ser enviado ao GitHub.
+## Publicar para visualizar online
 
-## Como funciona o alerta de risco
+O código pode ser publicado no Streamlit Community Cloud:
+
+1. Acesse o [Streamlit Community Cloud](https://share.streamlit.io/).
+2. Entre com sua conta do GitHub e autorize o acesso ao repositório.
+3. Clique em **Create app**.
+4. Selecione o repositório `larissarobertasilvacampos45-ux/Vibe-Coding), a branch `main` e o arquivo `app.py).
+5. Clique em **Deploy** e aguarde a instalação das dependências.
+
+O arquivo `requirements.txt` já lista as dependências necessárias para executar esta versão.
+
+## Importante sobre os dados
+
+Esta versão inicial usa SQLite e grava os dados no arquivo local `projetos.db`. Em serviços de hospedagem, esse armazenamento local pode não ser persistente entre reinicializações/redeploys e não é um banco compartilhado confiável para uso contínuo. Para manter os dados de forma confiável na versão online, o próximo passo é conectar o sistema a um banco de dados hospedado, como Supabase.
+
+Não inclua informações confidenciais de clientes. Esta versão ainda não tem autenticação de usuários.
+
+## Regra de classificação de riscos
 
 O nível é calculado pela combinação de probabilidade e impacto:
-- **Alto:** pontuação 6 a 9
-- **Médio:** pontuação 3 a 4
-- **Baixo:** pontuação 1 a 2
-
-O painel destaca riscos altos que ainda não foram resolvidos e projetos com prazo vencido.
-
-## Publicação online
-
-O código está preparado para ser executado localmente ou publicado em um serviço compatível com Streamlit, como o Streamlit Community Cloud. O envio ao GitHub, por si só, não deixa o aplicativo online.
-
-## Privacidade
-
-Use apenas dados fictícios ou não confidenciais. Esta versão é um protótipo local, sem autenticação de usuários e sem banco de dados compartilhado.
+- **Alto:** pontuação de 6 a 9.
+- **Médio:** pontuação de 3 a 4.
+- **Baixo:** pontuação de 1 a 2.
