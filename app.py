@@ -362,8 +362,8 @@ elif page == "Projetos":
                             st.rerun()
                 confirm_delete = st.checkbox("Confirmo que desejo excluir este projeto", key=f"confirm_delete_{p['id']}")
                 if st.button("Excluir projeto", key=f"delete_{p['id']}", disabled=not confirm_delete):
-                    execute("DELETE FROM risks WHERE project_id=?", (int(p["id"]),))
-                    execute("DELETE FROM projects WHERE id=?", (int(p["id"]),))
+                    execute("DELETE FROM risks WHERE project_id=?", (str(p["id"]),))
+                    execute("DELETE FROM projects WHERE id=?", (str(p["id"]),))
                     st.rerun()
 
 # ---------- Riscos ----------
