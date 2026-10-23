@@ -1,11 +1,25 @@
-import sqlite3
 from datetime import date, datetime
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from supabase import Client, create_client
 
-DB_PATH = Path(__file__).with_name("projetos.db")
+@st.cache_resource
+def get_supabase() -> Client:
+    """Cria um cliente Supabase usando credenciais armazenadas nos Secrets."""
+    try:
+        config = st.secrets["supabase"]
+        url = config["url"]
+        key = config["service_role_key"]
+    except Exception as exc:
+        st.error(
+            "Configure os Secrets do Streamlit antes de usar o Nexo. "
+            "Adicione a seção [supabase] com url e service_role_key."
+        )
+        st.stop()
+    return create_client(url, key)
+
+supabase = get_supabase()
 STATUSES = ["Planejamento", "Em andamento", "Atenção", "Pausado", "Concluído"]
 RISK_STATUSES = ["Aberto", "Em tratamento", "Resolvido"]
 
@@ -16,54 +30,76 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ---------- Persistência local ----------
-def connect():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
-
-
-def init_db():
-    with connect() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS projects (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                owner TEXT,
-                start_date TEXT,
-                end_date TEXT,
-                status TEXT NOT NULL DEFAULT 'Planejamento',
-                progress INTEGER NOT NULL DEFAULT 0,
-                description TEXT,
-                created_at TEXT NOT NULL
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS risks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id INTEGER NOT NULL,
-                title TEXT NOT NULL,
-                description TEXT,
-                probability TEXT NOT NULL,
-                impact TEXT NOT NULL,
-                mitigation TEXT,
-                status TEXT NOT NULL DEFAULT 'Aberto',
-                created_at TEXT NOT NULL,
-                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
-            )
-        """)
-
-
+# ---------- Persistência na nuvem (Supabase) ----------
 def query(sql, params=()):
-    with connect() as conn:
-        return pd.read_sql_query(sql, conn, params=params)
+    """Mantém a interface usada pela tela e consulta as tabelas do Supabase."""
+    normalized = " ".join(sql.lower().split())
+    if "from projects" in normalized and "join risks" not in normalized and "from risks" not in normalized:
+        response = supabase.table("projects").select("*").order("created_at", desc=True).execute()
+        rows = response.data or []
+        if "select id, name from projects" in normalized:
+            rows = sorted(rows, key=lambda row: (row.get("name") or "").lower())
+            rows = [{"id": row.get("id"), "name": row.get("name")} for row in rows]
+        return pd.DataFrame(rows)
+    if "from risks" in normalized:
+        risks_response = supabase.table("risks").select("*").order("created_at", desc=True).execute()
+        projects_response = supabase.table("projects").select("id,name").execute()
+        names = {str(row["id"]): row.get("name", "") for row in (projects_response.data or [])}
+        rows = []
+        for risk in risks_response.data or []:
+            project_name = names.get(str(risk.get("project_id")), "")
+            if "join projects" in normalized and not project_name:
+                continue
+            rows.append({**risk, "project_name": project_name})
+        return pd.DataFrame(rows)
+    raise ValueError(f"Consulta não suportada pelo adaptador Supabase: {sql}")
 
 
 def execute(sql, params=()):
-    with connect() as conn:
-        conn.execute(sql, params)
-        conn.commit()
+    """Traduz as operações usadas pela interface para chamadas Supabase."""
+    normalized = " ".join(sql.lower().split())
+    now = datetime.now().isoformat(timespec="seconds")
+    if normalized.startswith("insert into projects"):
+        name, owner, start_date, end_date, status, progress, description, created_at = params
+        supabase.table("projects").insert({
+            "name": name, "owner": owner or None,
+            "start_date": start_date, "end_date": end_date,
+            "due_date": end_date, "status": status, "progress": progress,
+            "description": description or None, "created_at": created_at,
+            "updated_at": now,
+        }).execute()
+        return
+    if normalized.startswith("update projects set"):
+        name, owner, status, progress, start_date, end_date, description, project_id = params
+        supabase.table("projects").update({
+            "name": name, "owner": owner or None, "status": status,
+            "progress": progress, "start_date": start_date,
+            "end_date": end_date, "due_date": end_date,
+            "description": description or None, "updated_at": now,
+        }).eq("id", str(project_id)).execute()
+        return
+    if normalized.startswith("delete from risks"):
+        supabase.table("risks").delete().eq("project_id", str(params[0])).execute()
+        return
+    if normalized.startswith("delete from projects"):
+        supabase.table("projects").delete().eq("id", str(params[0])).execute()
+        return
+    if normalized.startswith("insert into risks"):
+        project_id, title, description, probability, impact, mitigation, status, created_at = params
+        supabase.table("risks").insert({
+            "project_id": str(project_id), "title": title,
+            "description": description or None, "probability": probability,
+            "impact": impact, "mitigation": mitigation or None,
+            "status": status, "created_at": created_at, "updated_at": now,
+        }).execute()
+        return
+    if normalized.startswith("update risks set status"):
+        status, risk_id = params
+        supabase.table("risks").update({
+            "status": status, "updated_at": now
+        }).eq("id", str(risk_id)).execute()
+        return
+    raise ValueError(f"Operação não suportada pelo adaptador Supabase: {sql}")
 
 
 def risk_level(probability, impact):
@@ -109,7 +145,6 @@ def metric_card(label, value, note, accent="blue"):
     )
 
 
-init_db()
 
 # ---------- Design system ----------
 st.markdown("""
@@ -289,7 +324,7 @@ elif page == "Projetos":
     status_filter = st.selectbox("Filtrar por status", ["Todos os status"] + STATUSES, label_visibility="collapsed")
     filtered = projects.copy()
     if search.strip() and not filtered.empty:
-        filtered = filtered[filtered["name"].str.contains(search, case=False, na=False) | filtered["owner"].str.contains(search, case=False, na=False)]
+        filtered = filtered[filtered["name"].str.contains(search, case=False, na=False) | filtered["owner"].fillna("").str.contains(search, case=False, na=False)]
     if status_filter != "Todos os status" and not filtered.empty:
         filtered = filtered[filtered["status"] == status_filter]
 
@@ -322,7 +357,7 @@ elif page == "Projetos":
                             st.error("Confira o nome e as datas do projeto.")
                         else:
                             execute("""UPDATE projects SET name=?, owner=?, status=?, progress=?, start_date=?, end_date=?, description=? WHERE id=?""",
-                                    (e_name.strip(), e_owner.strip(), e_status, e_progress, e_start.isoformat(), e_end.isoformat(), e_desc.strip(), int(p["id"])))
+                                    (e_name.strip(), e_owner.strip(), e_status, e_progress, e_start.isoformat(), e_end.isoformat(), e_desc.strip(), str(p["id"])))
                             st.success("Projeto atualizado.")
                             st.rerun()
                 confirm_delete = st.checkbox("Confirmo que desejo excluir este projeto", key=f"confirm_delete_{p['id']}")
@@ -351,7 +386,7 @@ else:
         if projects.empty:
             st.info("Cadastre um projeto antes de registrar riscos.")
         else:
-            project_options = {int(row["id"]): row["name"] for _, row in projects.iterrows()}
+            project_options = {str(row["id"]): row["name"] for _, row in projects.iterrows()}
             with st.form("new_risk", clear_on_submit=True):
                 project_id = st.selectbox("Projeto relacionado", options=list(project_options), format_func=lambda x: project_options[x])
                 title = st.text_input("Nome do risco *", placeholder="Ex.: Atraso na liberação do ambiente de testes")
@@ -390,7 +425,7 @@ else:
                 st.write(r["mitigation"] or "Nenhum plano registrado.")
                 new_status = st.selectbox("Atualizar situação", RISK_STATUSES, index=RISK_STATUSES.index(r["status"]), key=f"risk_status_{r['id']}")
                 if st.button("Salvar situação", key=f"save_risk_{r['id']}", type="primary"):
-                    execute("UPDATE risks SET status=? WHERE id=?", (new_status, int(r["id"])))
+                    execute("UPDATE risks SET status=? WHERE id=?", (new_status, str(r["id"])))
                     st.rerun()
     else:
         st.info("Ainda não há riscos registrados para os projetos cadastrados.")
