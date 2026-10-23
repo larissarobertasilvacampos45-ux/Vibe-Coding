@@ -53,7 +53,7 @@ def render_login(client):
     .login-shell { max-width: 470px; margin: 5vh auto 0; padding: 34px 36px;
       background: white; border: 1px solid #e7ebf4; border-radius: 22px;
       box-shadow: 0 18px 55px rgba(22,34,66,.08); }
-    .login-brand { color: #6d42a1; font-size: 34px; font-weight: 800;
+    .login-brand { color: #1e3a5f; font-size: 34px; font-weight: 800;
       letter-spacing: -1.4px; margin-bottom: 4px; }
     .login-sub { color: #7b8498; font-size: 14px; margin-bottom: 24px; }
     </style>
@@ -244,7 +244,7 @@ def metric_card(label, value, note, accent="blue"):
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-:root { --ink:#172033; --muted:#758097; --line:#e8edf4; --blue:#4361ee; }
+:root { --ink:#172033; --muted:#758097; --line:#e8edf4; --blue:#3b82f6; --navy:#1e3a5f; --emerald:#10b981; }
 html, body, [class*="css"] { font-family:'DM Sans',sans-serif; }
 .stApp { background:#f6f8fc; color:var(--ink); }
 .block-container { max-width:1440px; padding-top:1.7rem; padding-bottom:3rem; }
@@ -253,7 +253,7 @@ html, body, [class*="css"] { font-family:'DM Sans',sans-serif; }
 [data-testid="stSidebar"] .stRadio label { padding:7px 10px; border-radius:9px; }
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color:#9eabc4; }
 .brand { display:flex; align-items:center; gap:12px; padding:8px 4px 28px; }
-.brand-mark { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,#6178ff,#8b5cf6); color:white; font-size:25px; font-weight:800; }
+.brand-mark { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:13px; background:linear-gradient(135deg,#3b82f6,#10b981); color:white; font-size:25px; font-weight:800; }
 .brand-name { color:#fff; font-family:'Manrope',sans-serif; font-size:21px; font-weight:800; letter-spacing:-.7px; }
 .brand-sub { color:#93a1bc; font-size:11px; letter-spacing:1.6px; text-transform:uppercase; margin-top:1px; }
 .sidebar-label { color:#7f8da8; font-size:10px; letter-spacing:1.5px; font-weight:700; text-transform:uppercase; margin:12px 0 8px; }
@@ -265,7 +265,7 @@ h3 { font-size:16px !important; font-weight:700 !important; }
 .page-subtitle { color:#7b8498; font-size:13px; margin:0 0 22px; }
 .metric-card { background:#fff; border:1px solid #e9edf5; border-radius:16px; padding:19px 20px; min-height:132px; box-shadow:0 3px 14px rgba(22,34,66,.025); position:relative; overflow:hidden; }
 .metric-card:before { content:''; position:absolute; top:0; left:0; height:3px; width:100%; background:#4361ee; }
-.metric-card.purple:before { background:#8b5cf6; } .metric-card.orange:before { background:#f59e0b; } .metric-card.red:before { background:#ef4444; } .metric-card.green:before { background:#10b981; }
+.metric-card.purple:before { background:#10b981; } .metric-card.orange:before { background:#f59e0b; } .metric-card.red:before { background:#ef4444; } .metric-card.green:before { background:#10b981; }
 .metric-label { color:#7c879b; font-size:12px; font-weight:600; margin-bottom:13px; }
 .metric-value { font-family:'Manrope',sans-serif; font-size:31px; font-weight:800; color:#172033; line-height:1.05; }
 .metric-note { color:#9aa3b3; font-size:11px; margin-top:10px; }
@@ -274,11 +274,11 @@ h3 { font-size:16px !important; font-weight:700 !important; }
 .planning { color:#596579; background:#eef1f6; } .active { color:#2563eb; background:#e8f0ff; }
 .attention { color:#b45309; background:#fff1d6; } .paused { color:#6b7280; background:#f1f2f5; } .done { color:#047857; background:#dff8ed; }
 .stButton > button { border-radius:9px; font-weight:650; min-height:40px; }
-.stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] { background:#4361ee; border-color:#4361ee; }
+.stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] { background:#3b82f6; border-color:#3b82f6; }
 div[data-testid="stForm"] { background:#fff; border:1px solid #e8edf4; border-radius:14px; padding:18px; }
 div[data-testid="stExpander"] { background:#fff; border:1px solid #e8edf4; border-radius:12px; }
 div[data-testid="stMetric"] { background:#fff; border:1px solid #e8edf4; padding:14px 16px; border-radius:12px; }
-.stProgress > div > div > div > div { background:#536dfe; }
+.stProgress > div > div > div > div { background:#10b981; }
 hr { border-color:#e8edf4; }
 .small-muted { color:#8a94a8; font-size:12px; }
 div[data-testid="stDataFrame"] { border:1px solid #e8edf4; border-radius:12px; overflow:hidden; }
@@ -301,6 +301,8 @@ with st.sidebar:
         label_visibility="collapsed",
         format_func=lambda x: {"Visão geral": "◫  Visão geral", "Projetos": "▦  Projetos", "Riscos": "◇  Riscos e impedimentos"}[x],
     )
+    st.markdown("<div class='sidebar-label'>Aparência</div>", unsafe_allow_html=True)
+    st.toggle("🌙 Modo noturno", key="dark_mode", value=st.session_state.get("dark_mode", False))
     st.markdown("<br><div class='sidebar-label'>Sobre o workspace</div>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:12px;line-height:1.6'>Organize entregas, acompanhe prazos e dê visibilidade aos riscos do projeto.</p>", unsafe_allow_html=True)
     st.markdown("<br><div style='border-top:1px solid #29344b;padding-top:15px;color:#8492ad;font-size:11px'>NEXO · PORTFÓLIO DE PROJETOS<br>Versão demonstrativa</div>", unsafe_allow_html=True)
@@ -312,6 +314,34 @@ with st.sidebar:
             for key in ("auth_user", "access_token", "refresh_token"):
                 st.session_state.pop(key, None)
             st.rerun()
+
+
+if st.session_state.get("dark_mode", False):
+    st.markdown("""
+    <style>
+    .stApp { background:#0f172a !important; color:#e2e8f0 !important; }
+    [data-testid="stMain"] .block-container { color:#e2e8f0; }
+    h1, h2, h3, h4, p, label, .stMarkdown, [data-testid="stCaptionContainer"] { color:#e2e8f0 !important; }
+    .page-eyebrow { color:#60a5fa !important; }
+    .page-subtitle, .small-muted, .metric-label, .metric-note { color:#a8b5c9 !important; }
+    .metric-card, .panel, div[data-testid="stForm"], div[data-testid="stExpander"],
+    div[data-testid="stMetric"], div[data-testid="stDataFrame"], [data-testid="stAlert"] {
+      background:#1e293b !important; border-color:#334155 !important; color:#e2e8f0 !important;
+    }
+    .metric-value { color:#f8fafc !important; }
+    input, textarea, [data-baseweb="select"] > div, [data-baseweb="popover"] {
+      background:#111c31 !important; color:#f1f5f9 !important; border-color:#475569 !important;
+    }
+    [data-testid="stSidebar"] { background:#0b1220 !important; }
+    [data-testid="stSidebar"] * { color:#e2e8f0; }
+    hr { border-color:#334155 !important; }
+    .planning { color:#cbd5e1 !important; background:#334155 !important; }
+    .active { color:#bfdbfe !important; background:#1e3a5f !important; }
+    .attention { color:#fde68a !important; background:#78350f !important; }
+    .paused { color:#d1d5db !important; background:#374151 !important; }
+    .done { color:#a7f3d0 !important; background:#064e3b !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
 projects = query("SELECT * FROM projects ORDER BY id DESC")
 risks = query("""
