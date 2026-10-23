@@ -13,6 +13,7 @@ st.set_page_config(
 
 STATUSES = ["Planejamento", "Em andamento", "Atenção", "Pausado", "Concluído"]
 RISK_STATUSES = ["Aberto", "Em tratamento", "Resolvido"]
+APP_URL = "https://larissarobertasilvacampos45-ux-vibe-coding-app-zfk4fm.streamlit.app/"
 
 
 def get_supabase():
@@ -63,6 +64,8 @@ def render_login(client):
 
     left, center, right = st.columns([1, 1.25, 1])
     with center:
+        if st.session_state.pop("password_reset_success", False):
+            st.success("Senha alterada com sucesso. Entre com sua nova senha.")
         st.subheader("Entrar na sua conta")
         st.caption("Use o e-mail e a senha cadastrados no Nexo.")
         with st.form("nexo_login"):
@@ -100,7 +103,10 @@ def render_login(client):
                     st.warning("Informe o e-mail da sua conta.")
                 else:
                     try:
-                        client.auth.reset_password_for_email(reset_email.strip())
+                        client.auth.reset_password_for_email(
+                            reset_email.strip(),
+                            {"redirect_to": APP_URL},
+                        )
                         st.success("Se a conta existir, você receberá as instruções de recuperação.")
                     except Exception:
                         st.error("Não foi possível solicitar a recuperação agora. Tente novamente mais tarde.")
@@ -110,6 +116,64 @@ def render_login(client):
 
 
 supabase = get_supabase()
+
+# ---------- Recuperação de senha via link de e-mail ----------
+# O template de recuperação do Supabase deve enviar token_hash e type=recovery
+# diretamente para a URL do Streamlit, pois o Streamlit não lê fragmentos (#) da URL.
+if (
+    st.query_params.get("token_hash")
+    and st.query_params.get("type") == "recovery"
+    and not st.session_state.get("password_recovery_mode")
+):
+    try:
+        verified = supabase.auth.verify_otp({
+            "token_hash": st.query_params.get("token_hash"),
+            "type": "recovery",
+        })
+        if verified.session and verified.user:
+            st.session_state.auth_user = {
+                "id": verified.user.id,
+                "email": verified.user.email or "",
+            }
+            st.session_state.access_token = verified.session.access_token
+            st.session_state.refresh_token = verified.session.refresh_token
+            st.session_state.password_recovery_mode = True
+            st.query_params.clear()
+            st.rerun()
+        else:
+            st.error("O link de recuperação é inválido ou expirou. Solicite um novo link.")
+            st.query_params.clear()
+    except Exception:
+        st.error("Não foi possível validar o link. Solicite uma nova recuperação de senha.")
+        st.query_params.clear()
+
+if st.session_state.get("password_recovery_mode"):
+    st.markdown("## Criar nova senha")
+    st.caption("Escolha uma senha nova para sua conta Nexo.")
+    with st.form("nexo_set_new_password"):
+        new_password = st.text_input("Nova senha", type="password")
+        confirm_password = st.text_input("Confirme a nova senha", type="password")
+        save_password = st.form_submit_button("Salvar nova senha", type="primary", use_container_width=True)
+    if save_password:
+        if len(new_password) < 8:
+            st.error("Use uma senha com pelo menos 8 caracteres.")
+        elif new_password != confirm_password:
+            st.error("As senhas não coincidem.")
+        else:
+            try:
+                supabase.auth.update_user({"password": new_password})
+                try:
+                    supabase.auth.sign_out()
+                except Exception:
+                    pass
+                for key in ("auth_user", "access_token", "refresh_token", "password_recovery_mode"):
+                    st.session_state.pop(key, None)
+                st.session_state.password_reset_success = True
+                st.rerun()
+            except Exception:
+                st.error("Não foi possível alterar a senha. Solicite um novo link e tente novamente.")
+    st.stop()
+
 if not st.session_state.get("auth_user"):
     render_login(supabase)
 
