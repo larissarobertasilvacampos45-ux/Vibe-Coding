@@ -264,7 +264,7 @@ h2 { font-size:21px !important; font-weight:750 !important; }
 h3 { font-size:16px !important; font-weight:700 !important; }
 .page-subtitle { color:#7b8498; font-size:13px; margin:0 0 22px; }
 .metric-card { background:#fff; border:1px solid #e9edf5; border-radius:16px; padding:19px 20px; min-height:132px; box-shadow:0 3px 14px rgba(22,34,66,.025); position:relative; overflow:hidden; }
-.metric-card:before { content:''; position:absolute; top:0; left:0; height:3px; width:100%; background:#4361ee; }
+.metric-card:before { content:''; position:absolute; top:0; left:0; height:3px; width:100%; background:#3b82f6; }
 .metric-card.purple:before { background:#10b981; } .metric-card.orange:before { background:#f59e0b; } .metric-card.red:before { background:#ef4444; } .metric-card.green:before { background:#10b981; }
 .metric-label { color:#7c879b; font-size:12px; font-weight:600; margin-bottom:13px; }
 .metric-value { font-family:'Manrope',sans-serif; font-size:31px; font-weight:800; color:#172033; line-height:1.05; }
