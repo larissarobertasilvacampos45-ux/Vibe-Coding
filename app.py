@@ -2,26 +2,7 @@ from datetime import date, datetime
 
 import pandas as pd
 import streamlit as st
-from supabase import Client, create_client
-
-@st.cache_resource
-def get_supabase() -> Client:
-    """Cria um cliente Supabase usando credenciais armazenadas nos Secrets."""
-    try:
-        config = st.secrets["supabase"]
-        url = config["url"]
-        key = config["service_role_key"]
-    except Exception as exc:
-        st.error(
-            "Configure os Secrets do Streamlit antes de usar o Nexo. "
-            "Adicione a seção [supabase] com url e service_role_key."
-        )
-        st.stop()
-    return create_client(url, key)
-
-supabase = get_supabase()
-STATUSES = ["Planejamento", "Em andamento", "Atenção", "Pausado", "Concluído"]
-RISK_STATUSES = ["Aberto", "Em tratamento", "Resolvido"]
+from supabase import create_client
 
 st.set_page_config(
     page_title="Nexo | Gestão de Projetos",
@@ -29,6 +10,108 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+STATUSES = ["Planejamento", "Em andamento", "Atenção", "Pausado", "Concluído"]
+RISK_STATUSES = ["Aberto", "Em tratamento", "Resolvido"]
+
+
+def get_supabase():
+    """Cria um cliente Supabase por sessão usando apenas a chave pública."""
+    try:
+        config = st.secrets["supabase"]
+        url = config["url"]
+        anon_key = config["anon_key"]
+    except Exception:
+        st.error(
+            "Configure os Secrets do Streamlit: [supabase], url e anon_key. "
+            "Não use a chave service_role nesta aplicação."
+        )
+        st.stop()
+
+    if "supabase_client" not in st.session_state:
+        st.session_state.supabase_client = create_client(url, anon_key)
+
+    client = st.session_state.supabase_client
+    access_token = st.session_state.get("access_token")
+    refresh_token = st.session_state.get("refresh_token")
+    if access_token and refresh_token:
+        try:
+            client.auth.set_session(access_token, refresh_token)
+        except Exception:
+            for key in ("auth_user", "access_token", "refresh_token"):
+                st.session_state.pop(key, None)
+    return client
+
+
+def render_login(client):
+    """Tela pública de autenticação; não carrega dados privados antes do login."""
+    st.markdown("""
+    <style>
+    .stApp { background: #f5f7fc; }
+    .login-shell { max-width: 470px; margin: 5vh auto 0; padding: 34px 36px;
+      background: white; border: 1px solid #e7ebf4; border-radius: 22px;
+      box-shadow: 0 18px 55px rgba(22,34,66,.08); }
+    .login-brand { color: #6d42a1; font-size: 34px; font-weight: 800;
+      letter-spacing: -1.4px; margin-bottom: 4px; }
+    .login-sub { color: #7b8498; font-size: 14px; margin-bottom: 24px; }
+    </style>
+    <div class="login-shell">
+      <div class="login-brand">◈ nexo</div>
+      <div class="login-sub">Project workspace · Acesse seu espaço de trabalho</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    left, center, right = st.columns([1, 1.25, 1])
+    with center:
+        st.subheader("Entrar na sua conta")
+        st.caption("Use o e-mail e a senha cadastrados no Nexo.")
+        with st.form("nexo_login"):
+            email = st.text_input("E-mail", placeholder="voce@exemplo.com")
+            password = st.text_input("Senha", type="password", placeholder="Sua senha")
+            submitted = st.form_submit_button("Entrar", type="primary", use_container_width=True)
+        if submitted:
+            if not email.strip() or not password:
+                st.error("Informe seu e-mail e sua senha.")
+            else:
+                try:
+                    result = client.auth.sign_in_with_password({
+                        "email": email.strip(),
+                        "password": password,
+                    })
+                    if not result.session or not result.user:
+                        st.error("Não foi possível iniciar a sessão. Confira suas credenciais.")
+                    else:
+                        st.session_state.auth_user = {
+                            "id": result.user.id,
+                            "email": result.user.email or email.strip(),
+                        }
+                        st.session_state.access_token = result.session.access_token
+                        st.session_state.refresh_token = result.session.refresh_token
+                        st.rerun()
+                except Exception:
+                    st.error("Não foi possível entrar. Confira o e-mail e a senha e tente novamente.")
+
+        with st.expander("Esqueci minha senha"):
+            with st.form("nexo_password_reset"):
+                reset_email = st.text_input("E-mail da conta", key="reset_email")
+                reset_submitted = st.form_submit_button("Enviar instruções")
+            if reset_submitted:
+                if not reset_email.strip():
+                    st.warning("Informe o e-mail da sua conta.")
+                else:
+                    try:
+                        client.auth.reset_password_for_email(reset_email.strip())
+                        st.success("Se a conta existir, você receberá as instruções de recuperação.")
+                    except Exception:
+                        st.error("Não foi possível solicitar a recuperação agora. Tente novamente mais tarde.")
+
+        st.caption("Acesso restrito a usuários cadastrados pelo administrador.")
+        st.stop()
+
+
+supabase = get_supabase()
+if not st.session_state.get("auth_user"):
+    render_login(supabase)
 
 # ---------- Persistência na nuvem (Supabase) ----------
 def query(sql, params=()):
@@ -63,6 +146,7 @@ def execute(sql, params=()):
         name, owner, start_date, end_date, status, progress, description, created_at = params
         supabase.table("projects").insert({
             "name": name, "owner": owner or None,
+            "owner_id": st.session_state.auth_user["id"],
             "start_date": start_date, "end_date": end_date,
             "due_date": end_date, "status": status, "progress": progress,
             "description": description or None, "created_at": created_at,
@@ -210,6 +294,14 @@ with st.sidebar:
     st.markdown("<br><div class='sidebar-label'>Sobre o workspace</div>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:12px;line-height:1.6'>Organize entregas, acompanhe prazos e dê visibilidade aos riscos do projeto.</p>", unsafe_allow_html=True)
     st.markdown("<br><div style='border-top:1px solid #29344b;padding-top:15px;color:#8492ad;font-size:11px'>NEXO · PORTFÓLIO DE PROJETOS<br>Versão demonstrativa</div>", unsafe_allow_html=True)
+    st.caption(f"Conectada: {st.session_state.auth_user.get('email', '')}")
+    if st.button("Sair da conta", use_container_width=True):
+        try:
+            supabase.auth.sign_out()
+        finally:
+            for key in ("auth_user", "access_token", "refresh_token"):
+                st.session_state.pop(key, None)
+            st.rerun()
 
 projects = query("SELECT * FROM projects ORDER BY id DESC")
 risks = query("""
