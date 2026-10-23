@@ -387,13 +387,18 @@ if page == "Visão geral":
     # Atalhos operacionais.
     action_a, action_b, action_c = st.columns([1, 1, 2])
     with action_a:
-        if st.button("＋ Novo projeto", type="primary", use_container_width=True):
-            st.session_state["navigation_page"] = "Projetos"
-            st.rerun()
+        st.button(
+            "＋ Novo projeto",
+            type="primary",
+            use_container_width=True,
+            on_click=lambda: st.session_state.update({"navigation_page": "Projetos"}),
+        )
     with action_b:
-        if st.button("＋ Registrar risco", use_container_width=True):
-            st.session_state["navigation_page"] = "Riscos"
-            st.rerun()
+        st.button(
+            "＋ Registrar risco",
+            use_container_width=True,
+            on_click=lambda: st.session_state.update({"navigation_page": "Riscos"}),
+        )
     with action_c:
         st.markdown(
             "<div class='dashboard-hint'>Visão executiva e operacional · Atualizado com os dados cadastrados</div>",
