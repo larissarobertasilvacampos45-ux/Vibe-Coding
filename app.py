@@ -359,10 +359,14 @@ hr { border-color:#dee5f0; }
 .dashboard-hint { color:#5e6e85; font-size:11px; padding:11px 0; }
 div[data-testid="stDataFrame"] { border:1px solid #dee5f0; border-radius:12px; overflow:hidden; }
 
-/* Página Visão Geral: dimensões, hierarquia e componentes alinhados ao frame Figma 1440×1024. */
+/* Página Visão Geral: ocupa toda a largura útil e acompanha o recolhimento da sidebar. */
+section[data-testid="stMain"]:has(.nexo-dashboard) > div[data-testid="stMainBlockContainer"],
 .block-container:has(.nexo-dashboard) {
-  width:calc(100% - 52px) !important; max-width:none !important;
-  margin-left:auto !important; margin-right:auto !important;
+  box-sizing:border-box !important;
+  width:100% !important; max-width:none !important;
+  margin-left:0 !important; margin-right:0 !important;
+  padding-left:clamp(20px, 3vw, 52px) !important;
+  padding-right:clamp(20px, 3vw, 52px) !important;
   padding-top:2.1rem !important; padding-bottom:1.8rem !important;
 }
 .nexo-dashboard { display:none; }
