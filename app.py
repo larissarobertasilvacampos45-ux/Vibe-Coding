@@ -292,7 +292,7 @@ st.markdown("""
 :root { --ink:#172133; --muted:#5e6e85; --line:#dee5f0; --blue:#2563eb; --navy:#132541; --emerald:#14997a; }
 html, body, [class*="css"] { font-family:'DM Sans',sans-serif; }
 .stApp { background:#f3f7fc; color:var(--ink); }
-header[data-testid="stHeader"] { display:none !important; height:0 !important; }
+header[data-testid="stHeader"] { background:transparent !important; }
 [data-testid="stSidebar"] { width:252px !important; min-width:252px !important; background:#132541 !important; border-right:1px solid #203553; }
 [data-testid="stSidebar"] > div { width:252px !important; }
 [data-testid="stSidebar"] * { color:#bacfe8; }
