@@ -546,7 +546,7 @@ if page == "Visão Geral":
     ) if total else 0
 
     # Cabeçalho e perfil: alinhados ao frame de 1440 px do Figma.
-    st.markdown("<div class='nexo-dashboard'>", unsafe_allow_html=True)
+    st.markdown("<span class='nexo-dashboard'></span>", unsafe_allow_html=True)
     header_main, header_tools = st.columns([8, 1], gap="small")
     with header_main:
         st.markdown(
@@ -732,7 +732,6 @@ if page == "Visão Geral":
         st.markdown("<div class='nexo-dashboard-stack'>" + chart_panel + alerts_panel + "</div>", unsafe_allow_html=True)
     with right_column:
         st.markdown("<div class='nexo-dashboard-stack'>" + progress_panel + agenda_panel + "</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------- Projetos ----------
 elif page == "Projetos":
@@ -845,7 +844,9 @@ elif page == "Agendas e entregas":
                     name_col.caption(f"Responsável: {html.escape(str(project.get('owner') or 'Não definido'))}")
                     status_col.markdown(f"**{label}**")
                     status_col.caption(f"Status do projeto: {project['status']}")
-                    st.progress(min(max(float(pd.to_numeric(project.get("progress", 0), errors="coerce") or 0), 0), 100) / 100)
+                    progress_value = pd.to_numeric(project.get("progress", 0), errors="coerce")
+                    progress_value = 0 if pd.isna(progress_value) else float(progress_value)
+                    st.progress(min(max(progress_value, 0), 100) / 100)
     st.caption("Esta agenda reflete os prazos dos projetos cadastrados; agendas independentes ainda não estão armazenadas separadamente.")
 
 # ---------- Riscos ----------
