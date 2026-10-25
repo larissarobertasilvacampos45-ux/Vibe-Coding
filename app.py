@@ -308,19 +308,7 @@ header[data-testid="stHeader"] { background:transparent !important; }
   color:#ffffff !important; fill:#ffffff !important; stroke:#ffffff !important;
   opacity:1 !important;
 }
-/* Força a sidebar a continuar visível mesmo se o estado do navegador estiver recolhido. */
-section[data-testid="stSidebar"][aria-expanded="false"] {
-  width:252px !important;
-  min-width:252px !important;
-  transform:translateX(0) !important;
-  visibility:visible !important;
-  margin-left:0 !important;
-}
-section[data-testid="stSidebar"][aria-expanded="false"] > div {
-  width:252px !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
+/* Não forçar largura na sidebar recolhida: o Streamlit deve liberar o espaço do conteúdo. */
 [data-testid="stSidebar"] { width:252px !important; min-width:252px !important; background:#132541 !important; border-right:1px solid #203553; }
 [data-testid="stSidebar"] > div { width:252px !important; }
 [data-testid="stSidebar"] * { color:#bacfe8; }
