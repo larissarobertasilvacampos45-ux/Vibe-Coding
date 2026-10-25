@@ -435,7 +435,8 @@ risks = query("""
     ORDER BY r.id DESC
 """) if not projects.empty else pd.DataFrame()
 
-# ---------- Visão geral / Dashboard executivo e operacional ----------
+
+# ---------- Visão Geral / Dashboard executivo e operacional ----------
 if page == "Visão Geral":
     st.markdown("<div class='page-eyebrow'>Workspace / Dashboard</div>", unsafe_allow_html=True)
     st.title("Visão Geral")
@@ -444,7 +445,7 @@ if page == "Visão Geral":
         unsafe_allow_html=True,
     )
 
-    # Datas e métricas calculadas diretamente dos dados persistidos no Supabase.
+    # Métricas calculadas diretamente dos dados persistidos no Supabase.
     today_date = date.today()
     today = today_date.isoformat()
     total = len(projects)
@@ -464,9 +465,11 @@ if page == "Visão Geral":
         )
     ].copy() if total else projects.copy()
     overdue = len(overdue_projects)
-    avg_progress = int(pd.to_numeric(projects["progress"], errors="coerce").fillna(0).mean()) if total else 0
+    avg_progress = int(
+        pd.to_numeric(projects["progress"], errors="coerce").fillna(0).mean()
+    ) if total else 0
 
-    # Atalhos operacionais.
+    # Atalhos operacionais com contraste adequado no modo claro.
     action_a, action_b, action_c = st.columns([1, 1, 2])
     with action_a:
         st.button(
@@ -483,166 +486,177 @@ if page == "Visão Geral":
         )
     with action_c:
         st.markdown(
-            "<div class='dashboard-hint'>Visão executiva e operacional · Atualizado com os dados cadastrados</div>",
+            "<div class='dashboard-hint'>Visão executiva e operacional · Dados atualizados a partir do portfólio</div>",
             unsafe_allow_html=True,
         )
 
-    cols = st.columns(4)
-    with cols[0]:
+    kpi_cols = st.columns(4, gap="medium")
+    with kpi_cols[0]:
         metric_card("PROJETOS NO PORTFÓLIO", total, f"{completed} concluído(s)", "blue")
-    with cols[1]:
+    with kpi_cols[1]:
         metric_card("EM ANDAMENTO", active, "Em execução ou atenção", "green")
-    with cols[2]:
+    with kpi_cols[2]:
         metric_card("PROJETOS ATRASADOS", overdue, "Prazo vencido e não concluídos", "orange")
-    with cols[3]:
+    with kpi_cols[3]:
         metric_card("RISCOS CRÍTICOS", high_risks, "Riscos altos ainda não resolvidos", "red")
 
     st.write("")
-    # Gráfico em largura total para ganhar destaque e leitura.
-    st.markdown("<div class='panel'>", unsafe_allow_html=True)
-    st.subheader("Saúde do portfólio")
-    st.markdown(
-        "<p class='small-muted'>Distribuição dos projetos por status, com leitura ampliada.</p>",
-        unsafe_allow_html=True,
-    )
-    if projects.empty:
-        st.info("O gráfico aparecerá após o cadastro de projetos.")
-    else:
-        status_counts = projects["status"].value_counts().reindex(STATUSES, fill_value=0)
-        chart_df = status_counts[status_counts > 0].rename_axis("Status").reset_index(name="Projetos")
-        st.bar_chart(chart_df.set_index("Status"), use_container_width=True, height=320)
-        chart_summary = st.columns([1, 1, 2])
-        chart_summary[0].metric("Progresso médio", f"{avg_progress}%")
-        chart_summary[1].metric("Concluídos", completed)
-        with chart_summary[2]:
-            st.markdown("<div class='dashboard-hint'>Use esta visão para identificar concentração de projetos por situação e acompanhar a evolução geral.</div>", unsafe_allow_html=True)
-        st.progress(min(max(avg_progress, 0), 100) / 100)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.write("")
-    left, right = st.columns([1.45, 1], gap="large")
-    with left:
-        st.markdown("<div class='panel'>", unsafe_allow_html=True)
-        st.subheader("Portfólio de projetos")
-        st.markdown(
-            "<p class='small-muted'>Progresso, status e prazo das iniciativas prioritárias.</p>",
-            unsafe_allow_html=True,
-        )
-        if projects.empty:
-            st.info("Seu portfólio ainda está vazio. Use **Novo projeto** para cadastrar a primeira iniciativa.")
-        else:
-            portfolio = projects.copy()
-            portfolio["_deadline"] = portfolio["end_date"].fillna("").astype(str)
-            portfolio["_progress"] = pd.to_numeric(portfolio["progress"], errors="coerce").fillna(0)
-            portfolio["_overdue"] = portfolio.apply(
-                lambda row: bool(row["_deadline"])
-                and row["_deadline"][:10] < today
-                and row["status"] != "Concluído",
-                axis=1,
+    # Gráfico destacado à esquerda; progresso e entregas à direita.
+    chart_col, summary_col = st.columns([1.6, 1], gap="large")
+    with chart_col:
+        with st.container(border=True):
+            st.subheader("Saúde do portfólio")
+            st.markdown(
+                "<p class='small-muted'>Distribuição das iniciativas por situação.</p>",
+                unsafe_allow_html=True,
             )
-            portfolio = portfolio.sort_values(
-                ["_overdue", "_deadline"], ascending=[False, True], na_position="last"
-            ).head(7)
-            for _, p in portfolio.iterrows():
-                st.markdown(f"**{p['name']}**")
-                detail_cols = st.columns([2, 1])
-                with detail_cols[0]:
-                    st.markdown(
-                        f"<span class='status-pill {status_class(p['status'])}'>{p['status']}</span>",
-                        unsafe_allow_html=True,
-                    )
-                    st.caption(f"Prazo: {fmt_date(p['end_date'])}")
-                with detail_cols[1]:
-                    st.markdown(
-                        f"<div style='text-align:right;font-size:13px;font-weight:700;padding-top:3px'>{int(p['_progress'])}%</div>",
-                        unsafe_allow_html=True,
-                    )
-                st.progress(min(max(float(p["_progress"]), 0), 100) / 100)
-                st.markdown("<div style='height:5px'></div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            if projects.empty:
+                st.info("O gráfico aparecerá aqui após o cadastro do primeiro projeto.")
+            else:
+                status_counts = projects["status"].value_counts().reindex(STATUSES, fill_value=0)
+                chart_df = status_counts.rename_axis("Status").reset_index(name="Projetos")
+                st.bar_chart(
+                    chart_df.set_index("Status"),
+                    use_container_width=True,
+                    height=300,
+                    color="#2563eb",
+                )
+                chart_summary = st.columns(2)
+                chart_summary[0].metric("Projetos concluídos", completed)
+                chart_summary[1].metric("Progresso médio", f"{avg_progress}%")
+                st.progress(
+                    min(max(avg_progress, 0), 100) / 100,
+                    text=f"Conclusão média do portfólio · {avg_progress}%",
+                )
 
-    with right:
-        st.markdown("<div class='panel'>", unsafe_allow_html=True)
-        st.subheader("Resumo operacional")
-        st.markdown(
-            "<p class='small-muted'>Indicadores complementares do portfólio.</p>",
-            unsafe_allow_html=True,
-        )
-        summary_cols = st.columns(2)
-        summary_cols[0].metric("Concluídos", completed)
-        summary_cols[1].metric("Pausados", paused)
-        summary_cols[0].metric("Progresso médio", f"{avg_progress}%")
-        summary_cols[1].metric("Riscos críticos", high_risks)
-        st.markdown("</div>", unsafe_allow_html=True)
+    with summary_col:
+        with st.container(border=True):
+            st.subheader("Progresso do portfólio")
+            st.markdown(
+                "<p class='small-muted'>Visão consolidada da execução.</p>",
+                unsafe_allow_html=True,
+            )
+            st.metric("Conclusão média", f"{avg_progress}%")
+            st.progress(min(max(avg_progress, 0), 100) / 100)
+            summary_metrics = st.columns(2)
+            summary_metrics[0].metric("Concluídos", completed)
+            summary_metrics[1].metric("Pausados", paused)
+            st.caption("Indicadores calculados a partir dos projetos cadastrados.")
+
+        with st.container(border=True):
+            st.subheader("Agendas e entregas")
+            st.markdown(
+                "<p class='small-muted'>Prazos vencidos e entregas previstas para os próximos 14 dias.</p>",
+                unsafe_allow_html=True,
+            )
+            if st.button("＋ Cadastrar projeto / entrega", key="dashboard_add_agenda", use_container_width=True):
+                st.session_state["navigation_page"] = "Projetos"
+                st.rerun()
+
+            if projects.empty:
+                st.info("Cadastre um projeto para acompanhar os prazos nesta área.")
+            else:
+                deadlines = projects.copy()
+                deadlines["_date"] = pd.to_datetime(deadlines["end_date"], errors="coerce").dt.date
+                deadlines = deadlines[
+                    deadlines["_date"].notna()
+                    & (deadlines["_date"] <= today_date + pd.Timedelta(days=14))
+                    & (deadlines["status"] != "Concluído")
+                ].copy()
+                if deadlines.empty:
+                    st.success("Nenhum prazo vencido ou previsto para os próximos 14 dias.")
+                else:
+                    deadlines["_late"] = deadlines["_date"] < today_date
+                    deadlines = deadlines.sort_values(
+                        ["_late", "_date"], ascending=[False, True]
+                    ).head(4)
+                    for _, project in deadlines.iterrows():
+                        days_left = (project["_date"] - today_date).days
+                        label = f"{project['name']} · {fmt_date(project['end_date'])}"
+                        if days_left < 0:
+                            st.error(f"**{label}**\n\nAtrasado há {abs(days_left)} dia(s).")
+                        elif days_left == 0:
+                            st.warning(f"**{label}**\n\nEntrega prevista para hoje.")
+                        else:
+                            st.info(f"**{label}**\n\nEm {days_left} dia(s).")
 
     st.write("")
-    deadline_col, alert_col = st.columns([1.15, 1], gap="large")
-    with deadline_col:
-        st.markdown("<div class='panel'>", unsafe_allow_html=True)
-        st.subheader("Agendas e entregas")
-        if st.button("＋ Cadastrar agenda ou entrega", key="dashboard_add_agenda", use_container_width=True):
-            st.session_state["navigation_page"] = "Projetos"
-            st.rerun()
-        st.markdown(
-            "<p class='small-muted'>Prazos vencidos e entregas previstas para os próximos 14 dias.</p>",
-            unsafe_allow_html=True,
-        )
-        if projects.empty:
-            st.info("Cadastre projetos para acompanhar os próximos prazos.")
-        else:
-            deadlines = projects.copy()
-            deadlines["_date"] = pd.to_datetime(deadlines["end_date"], errors="coerce").dt.date
-            deadlines = deadlines[
-                deadlines["_date"].notna()
-                & (deadlines["_date"] <= today_date + pd.Timedelta(days=14))
-                & (deadlines["status"] != "Concluído")
-            ].copy()
-            if deadlines.empty:
-                st.success("Nenhum prazo vencido ou previsto para os próximos 14 dias.")
+    # Parte inferior: portfólio e itens que pedem atenção.
+    portfolio_col, alerts_col = st.columns([1.15, 1], gap="large")
+    with portfolio_col:
+        with st.container(border=True):
+            st.subheader("Portfólio de projetos")
+            st.markdown(
+                "<p class='small-muted'>Progresso, situação e prazo das iniciativas prioritárias.</p>",
+                unsafe_allow_html=True,
+            )
+            if projects.empty:
+                st.info("Seu portfólio ainda está vazio. Use **Novo projeto** para cadastrar a primeira iniciativa.")
             else:
-                deadlines["_late"] = deadlines["_date"] < today_date
-                deadlines = deadlines.sort_values(["_late", "_date"], ascending=[False, True]).head(8)
-                for _, p in deadlines.iterrows():
-                    days_left = (p["_date"] - today_date).days
-                    if days_left < 0:
-                        urgency = f"ATRASADO · {abs(days_left)} dia(s)"
-                        st.error(f"**{p['name']}** · {fmt_date(p['end_date'])}\n\n{urgency}")
-                    elif days_left == 0:
-                        st.warning(f"**{p['name']}** · vence hoje")
-                    else:
-                        st.info(f"**{p['name']}** · {fmt_date(p['end_date'])} · em {days_left} dia(s)")
-        st.markdown("</div>", unsafe_allow_html=True)
+                portfolio = projects.copy()
+                portfolio["_deadline"] = portfolio["end_date"].fillna("").astype(str)
+                portfolio["_progress"] = pd.to_numeric(
+                    portfolio["progress"], errors="coerce"
+                ).fillna(0)
+                portfolio["_overdue"] = portfolio.apply(
+                    lambda row: bool(row["_deadline"])
+                    and row["_deadline"][:10] < today
+                    and row["status"] != "Concluído",
+                    axis=1,
+                )
+                portfolio = portfolio.sort_values(
+                    ["_overdue", "_deadline"], ascending=[False, True], na_position="last"
+                ).head(5)
+                for _, project in portfolio.iterrows():
+                    st.markdown(f"**{project['name']}**")
+                    details = st.columns([2, 1])
+                    with details[0]:
+                        st.markdown(
+                            f"<span class='status-pill {status_class(project['status'])}'>{project['status']}</span>",
+                            unsafe_allow_html=True,
+                        )
+                        st.caption(f"Prazo: {fmt_date(project['end_date'])}")
+                    with details[1]:
+                        st.markdown(
+                            f"<div style='text-align:right;font-size:13px;font-weight:700;padding-top:3px'>{int(project['_progress'])}%</div>",
+                            unsafe_allow_html=True,
+                        )
+                    st.progress(min(max(float(project["_progress"]), 0), 100) / 100)
+                    st.markdown("<div style='height:5px'></div>", unsafe_allow_html=True)
 
-    with alert_col:
-        st.markdown("<div class='panel'>", unsafe_allow_html=True)
-        st.subheader("Alertas e prioridades")
-        st.markdown(
-            "<p class='small-muted'>Itens que podem exigir acompanhamento ou uma decisão.</p>",
-            unsafe_allow_html=True,
-        )
-        alert_count = 0
-        if overdue:
-            st.error(f"{overdue} projeto(s) com prazo vencido. Revise o cronograma e os próximos passos.")
-            alert_count += 1
-        if high_risks:
-            st.warning(f"{high_risks} risco(s) alto(s) sem resolução. Verifique o plano de mitigação.")
-            alert_count += 1
-        if paused:
-            st.info(f"{paused} projeto(s) pausado(s). Avalie os impedimentos e as condições para retomada.")
-            alert_count += 1
-        if total:
-            due_soon_count = int(sum(
-                bool(row.get("end_date"))
-                and today_date <= date.fromisoformat(str(row.get("end_date"))[:10]) <= today_date + pd.Timedelta(days=7)
-                and row.get("status") != "Concluído"
-                for _, row in projects.iterrows()
-            ))
-            if due_soon_count:
-                st.warning(f"{due_soon_count} projeto(s) vencem nos próximos 7 dias. Confirme o plano de entrega.")
+    with alerts_col:
+        with st.container(border=True):
+            st.subheader("Alertas e prioridades")
+            st.markdown(
+                "<p class='small-muted'>Itens que podem exigir acompanhamento ou uma decisão.</p>",
+                unsafe_allow_html=True,
+            )
+            alert_count = 0
+            if overdue:
+                st.error(f"{overdue} projeto(s) com prazo vencido. Revise o cronograma e os próximos passos.")
                 alert_count += 1
-        if alert_count == 0:
-            st.success("Nenhum alerta identificado com os dados atuais. Continue acompanhando os prazos e riscos.")
-        st.markdown("</div>", unsafe_allow_html=True)
+            if high_risks:
+                st.warning(f"{high_risks} risco(s) alto(s) sem resolução. Verifique o plano de mitigação.")
+                alert_count += 1
+            if paused:
+                st.info(f"{paused} projeto(s) pausado(s). Avalie os impedimentos e as condições para retomada.")
+                alert_count += 1
+
+            if total:
+                parsed_deadlines = pd.to_datetime(projects["end_date"], errors="coerce").dt.date
+                due_soon_count = sum(
+                    deadline is not None
+                    and today_date <= deadline <= today_date + pd.Timedelta(days=7)
+                    and projects.iloc[index].get("status") != "Concluído"
+                    for index, deadline in enumerate(parsed_deadlines)
+                )
+                if due_soon_count:
+                    st.warning(f"{due_soon_count} projeto(s) vencem nos próximos 7 dias. Confirme o plano de entrega.")
+                    alert_count += 1
+
+            if alert_count == 0:
+                st.success("Nenhum alerta identificado com os dados atuais. Continue acompanhando prazos e riscos.")
+            st.caption("Os alertas refletem os projetos e riscos realmente cadastrados.")
 
 # ---------- Projetos ----------
 elif page == "Projetos":
