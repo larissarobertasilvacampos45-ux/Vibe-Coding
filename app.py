@@ -645,7 +645,7 @@ if page == "Visão Geral":
             if total:
                 parsed_deadlines = pd.to_datetime(projects["end_date"], errors="coerce").dt.date
                 due_soon_count = sum(
-                    deadline is not None
+                    pd.notna(deadline)
                     and today_date <= deadline <= today_date + pd.Timedelta(days=7)
                     and projects.iloc[index].get("status") != "Concluído"
                     for index, deadline in enumerate(parsed_deadlines)
