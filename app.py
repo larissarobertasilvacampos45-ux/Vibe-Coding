@@ -298,11 +298,15 @@ header[data-testid="stHeader"] { background:transparent !important; }
   display:flex !important; visibility:visible !important; opacity:1 !important;
 }
 [data-testid="stSidebarCollapsedControl"] button {
-  background:#132541 !important; color:#ffffff !important;
+  background:#132541 !important; color:#ffffff !important; opacity:1 !important;
   border:1px solid #284264 !important; border-radius:8px !important;
+  box-shadow:0 2px 8px rgba(19,37,65,.22) !important;
 }
-[data-testid="stSidebarCollapsedControl"] button svg {
+[data-testid="stSidebarCollapsedControl"] button svg,
+[data-testid="stSidebarCollapsedControl"] button svg path,
+[data-testid="stSidebarCollapsedControl"] button span {
   color:#ffffff !important; fill:#ffffff !important; stroke:#ffffff !important;
+  opacity:1 !important;
 }
 /* Força a sidebar a continuar visível mesmo se o estado do navegador estiver recolhido. */
 section[data-testid="stSidebar"][aria-expanded="false"] {
@@ -370,7 +374,7 @@ div[data-testid="stDataFrame"] { border:1px solid #dee5f0; border-radius:12px; o
 /* Página Visão Geral: dimensões, hierarquia e componentes alinhados ao frame Figma 1440×1024. */
 .block-container:has(.nexo-dashboard) {
   width:calc(100% - 52px) !important; max-width:none !important;
-  margin-left:40px !important; margin-right:auto !important;
+  margin-left:auto !important; margin-right:auto !important;
   padding-top:2.1rem !important; padding-bottom:1.8rem !important;
 }
 .nexo-dashboard { display:none; }
