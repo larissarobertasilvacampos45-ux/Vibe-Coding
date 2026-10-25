@@ -338,6 +338,13 @@ h3 { font-size:16px !important; font-weight:700 !important; }
   -webkit-text-fill-color:#8491a5 !important;
   opacity:1 !important;
 }
+.stButton > button:not([kind="primary"]) {
+  background:#ffffff !important; color:#1e3a5f !important;
+  border:1px solid #cbd5e1 !important;
+}
+.stButton > button:not([kind="primary"]):hover {
+  background:#eff6ff !important; border-color:#93c5fd !important; color:#1d4ed8 !important;
+}
 .stButton > button { border-radius:9px; font-weight:650; min-height:40px; }
 .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] { background:#3b82f6; border-color:#3b82f6; }
 div[data-testid="stForm"] { background:#fff; border:1px solid #e8edf4; border-radius:14px; padding:18px; }
@@ -364,10 +371,10 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     page = st.radio(
         "Navegação",
-        ["Visão geral", "Projetos", "Riscos"],
+        ["Visão Geral", "Projetos", "Riscos"],
         label_visibility="collapsed",
         key="navigation_page",
-        format_func=lambda x: {"Visão geral": "◫  Visão geral", "Projetos": "▦  Projetos", "Riscos": "◇  Riscos e impedimentos"}[x],
+        format_func=lambda x: {"Visão Geral": "◫  Visão Geral", "Projetos": "▦  Projetos", "Riscos": "◇  Riscos e impedimentos"}[x],
     )
     st.markdown("<div class='sidebar-label'>Aparência</div>", unsafe_allow_html=True)
     st.toggle("🌙 Modo noturno", key="dark_mode", value=st.session_state.get("dark_mode", False))
@@ -400,6 +407,12 @@ if st.session_state.get("dark_mode", False):
     input, textarea, [data-baseweb="select"] > div, [data-baseweb="popover"] {
       background:#111c31 !important; color:#f1f5f9 !important; border-color:#475569 !important;
     }
+    .stButton > button:not([kind="primary"]) {
+      background:#1e293b !important; color:#e2e8f0 !important; border-color:#475569 !important;
+    }
+    .stButton > button:not([kind="primary"]):hover {
+      background:#334155 !important; color:#ffffff !important; border-color:#64748b !important;
+    }
     [data-testid="stSidebar"] { background:#0b1220 !important; }
     [data-testid="stSidebar"] * { color:#e2e8f0; }
     hr { border-color:#334155 !important; }
@@ -419,9 +432,9 @@ risks = query("""
 """) if not projects.empty else pd.DataFrame()
 
 # ---------- Visão geral / Dashboard executivo e operacional ----------
-if page == "Visão geral":
+if page == "Visão Geral":
     st.markdown("<div class='page-eyebrow'>Workspace / Dashboard</div>", unsafe_allow_html=True)
-    st.title("Visão geral")
+    st.title("Visão Geral")
     st.markdown(
         "<p class='page-subtitle'>Acompanhe resultados, antecipe prazos e identifique as próximas ações do portfólio.</p>",
         unsafe_allow_html=True,
@@ -481,6 +494,28 @@ if page == "Visão geral":
         metric_card("RISCOS CRÍTICOS", high_risks, "Riscos altos ainda não resolvidos", "red")
 
     st.write("")
+    # Gráfico em largura total para ganhar destaque e leitura.
+    st.markdown("<div class='panel'>", unsafe_allow_html=True)
+    st.subheader("Saúde do portfólio")
+    st.markdown(
+        "<p class='small-muted'>Distribuição dos projetos por status, com leitura ampliada.</p>",
+        unsafe_allow_html=True,
+    )
+    if projects.empty:
+        st.info("O gráfico aparecerá após o cadastro de projetos.")
+    else:
+        status_counts = projects["status"].value_counts().reindex(STATUSES, fill_value=0)
+        chart_df = status_counts[status_counts > 0].rename_axis("Status").reset_index(name="Projetos")
+        st.bar_chart(chart_df.set_index("Status"), use_container_width=True, height=320)
+        chart_summary = st.columns([1, 1, 2])
+        chart_summary[0].metric("Progresso médio", f"{avg_progress}%")
+        chart_summary[1].metric("Concluídos", completed)
+        with chart_summary[2]:
+            st.markdown("<div class='dashboard-hint'>Use esta visão para identificar concentração de projetos por situação e acompanhar a evolução geral.</div>", unsafe_allow_html=True)
+        st.progress(min(max(avg_progress, 0), 100) / 100)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.write("")
     left, right = st.columns([1.45, 1], gap="large")
     with left:
         st.markdown("<div class='panel'>", unsafe_allow_html=True)
@@ -524,32 +559,26 @@ if page == "Visão geral":
 
     with right:
         st.markdown("<div class='panel'>", unsafe_allow_html=True)
-        st.subheader("Saúde do portfólio")
+        st.subheader("Resumo operacional")
         st.markdown(
-            "<p class='small-muted'>Distribuição das iniciativas por situação.</p>",
+            "<p class='small-muted'>Indicadores complementares do portfólio.</p>",
             unsafe_allow_html=True,
         )
-        if projects.empty:
-            st.info("O gráfico aparecerá após o cadastro de projetos.")
-        else:
-            status_counts = projects["status"].value_counts().reindex(STATUSES, fill_value=0)
-            chart_df = status_counts[status_counts > 0].rename_axis("Status").reset_index(name="Projetos")
-            st.bar_chart(chart_df.set_index("Status"), use_container_width=True)
-            st.markdown(
-                f"<div class='small-muted'>Progresso médio do portfólio: <b>{avg_progress}%</b></div>",
-                unsafe_allow_html=True,
-            )
-            st.progress(min(max(avg_progress, 0), 100) / 100)
-            summary_cols = st.columns(2)
-            summary_cols[0].metric("Concluídos", completed)
-            summary_cols[1].metric("Pausados", paused)
+        summary_cols = st.columns(2)
+        summary_cols[0].metric("Concluídos", completed)
+        summary_cols[1].metric("Pausados", paused)
+        summary_cols[0].metric("Progresso médio", f"{avg_progress}%")
+        summary_cols[1].metric("Riscos críticos", high_risks)
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.write("")
     deadline_col, alert_col = st.columns([1.15, 1], gap="large")
     with deadline_col:
         st.markdown("<div class='panel'>", unsafe_allow_html=True)
-        st.subheader("Agenda de entregas")
+        st.subheader("Agendas e entregas")
+        if st.button("＋ Cadastrar agenda ou entrega", key="dashboard_add_agenda", use_container_width=True):
+            st.session_state["navigation_page"] = "Projetos"
+            st.rerun()
         st.markdown(
             "<p class='small-muted'>Prazos vencidos e entregas previstas para os próximos 14 dias.</p>",
             unsafe_allow_html=True,
