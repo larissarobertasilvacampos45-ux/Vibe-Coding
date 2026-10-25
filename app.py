@@ -554,7 +554,7 @@ elif page == "Projetos":
 
     with st.expander("＋  Cadastrar novo projeto", expanded=projects.empty):
         with st.form("new_project", clear_on_submit=True):
-            name = st.text_input("Nome do projeto *", placeholder="Ex.: Implantação de sistema CLM")
+            name = st.text_input("Nome do projeto *", placeholder="Ex.: Implantação de sistema de gestão")
             c1, c2 = st.columns(2)
             owner = c1.text_input("Responsável", placeholder="Nome do responsável")
             status = c2.selectbox("Status", STATUSES)
