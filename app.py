@@ -49,13 +49,57 @@ def render_login(client):
     """Tela pública de autenticação; não carrega dados privados antes do login."""
     st.markdown("""
     <style>
-    .stApp { background: #f5f7fc; }
-    .login-shell { max-width: 470px; margin: 5vh auto 0; padding: 34px 36px;
-      background: white; border: 1px solid #e7ebf4; border-radius: 22px;
-      box-shadow: 0 18px 55px rgba(22,34,66,.08); }
-    .login-brand { color: #1e3a5f; font-size: 34px; font-weight: 800;
+    :root { color-scheme: light; }
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+      background: #f4f7fb !important; color: #172033 !important;
+    }
+    [data-testid="stMain"] .block-container { max-width: 980px; padding-top: 2rem; color: #172033 !important; }
+    .login-shell { max-width: 590px; margin: 2vh auto 0; padding: 34px 40px;
+      background: #ffffff; border: 1px solid #e1e8f2; border-radius: 24px;
+      box-shadow: 0 18px 55px rgba(22,34,66,.07); }
+    .login-brand { color: #1e3a5f !important; font-size: 34px; font-weight: 800;
       letter-spacing: -1.4px; margin-bottom: 4px; }
-    .login-sub { color: #7b8498; font-size: 14px; margin-bottom: 24px; }
+    .login-sub { color: #64748b !important; font-size: 14px; margin-bottom: 24px; }
+    [data-testid="stMain"] h1, [data-testid="stMain"] h2, [data-testid="stMain"] h3,
+    [data-testid="stMain"] p, [data-testid="stMain"] label,
+    [data-testid="stMain"] [data-testid="stCaptionContainer"],
+    [data-testid="stMain"] [data-testid="stMarkdownContainer"] {
+      color: #172033 !important;
+    }
+    [data-testid="stMain"] h1, [data-testid="stMain"] h2, [data-testid="stMain"] h3 {
+      font-family: 'Manrope', 'DM Sans', sans-serif !important;
+      font-weight: 800 !important;
+    }
+    [data-testid="stMain"] [data-testid="stWidgetLabel"] p { color: #475569 !important; }
+    [data-testid="stMain"] input, [data-testid="stMain"] textarea,
+    [data-testid="stMain"] [data-baseweb="input"] > div,
+    [data-testid="stMain"] [data-baseweb="textarea"] > div {
+      background: #ffffff !important; color: #172033 !important;
+      border: 1px solid #cbd5e1 !important; border-radius: 10px !important;
+    }
+    [data-testid="stMain"] input::placeholder,
+    [data-testid="stMain"] textarea::placeholder {
+      color: #8491a5 !important; opacity: 1 !important;
+    }
+    [data-testid="stMain"] [data-testid="stForm"] {
+      background: #ffffff !important; border: 1px solid #e1e8f2 !important;
+      border-radius: 16px !important; padding: 20px !important;
+    }
+    [data-testid="stMain"] .stFormSubmitButton button,
+    [data-testid="stMain"] button[kind="primary"] {
+      background: #2563eb !important; color: #ffffff !important;
+      border: 1px solid #2563eb !important; border-radius: 10px !important;
+      min-height: 44px; font-weight: 700 !important;
+    }
+    [data-testid="stMain"] .stFormSubmitButton button:hover,
+    [data-testid="stMain"] button[kind="primary"]:hover {
+      background: #1d4ed8 !important; border-color: #1d4ed8 !important;
+    }
+    [data-testid="stMain"] a { color: #1d4ed8 !important; }
+    @media (max-width: 768px) {
+      .login-shell { margin: 0 auto; padding: 26px 22px; }
+      [data-testid="stMain"] .block-container { padding: 1.2rem .8rem 2rem; }
+    }
     </style>
     <div class="login-shell">
       <div class="login-brand">◈ nexo</div>
