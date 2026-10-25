@@ -301,7 +301,7 @@ html, body, [class*="css"] { font-family:'DM Sans',sans-serif; }
 .brand-name { color:#fff; font-family:'Manrope',sans-serif; font-size:21px; font-weight:800; letter-spacing:-.7px; }
 .brand-sub { color:#93a1bc; font-size:11px; letter-spacing:1.6px; text-transform:uppercase; margin-top:1px; }
 .sidebar-label { color:#7f8da8; font-size:10px; letter-spacing:1.5px; font-weight:700; text-transform:uppercase; margin:12px 0 8px; }
-.page-eyebrow { color:#6375d9; text-transform:uppercase; letter-spacing:1.8px; font-size:10px; font-weight:800; margin-bottom:7px; }
+.page-eyebrow { color:#2563eb; text-transform:uppercase; letter-spacing:1.8px; font-size:10px; font-weight:800; margin-bottom:7px; }
 h1, h2, h3 { font-family:'Manrope',sans-serif !important; color:#172033 !important; letter-spacing:-.6px; }
 h1 { font-size:30px !important; font-weight:800 !important; margin-bottom:2px !important; }
 h2 { font-size:21px !important; font-weight:750 !important; }
@@ -309,11 +309,14 @@ h3 { font-size:16px !important; font-weight:700 !important; }
 .page-subtitle { color:#7b8498; font-size:13px; margin:0 0 22px; }
 .metric-card { background:#fff; border:1px solid #e9edf5; border-radius:16px; padding:19px 20px; min-height:132px; box-shadow:0 3px 14px rgba(22,34,66,.025); position:relative; overflow:hidden; }
 .metric-card:before { content:''; position:absolute; top:0; left:0; height:3px; width:100%; background:#3b82f6; }
-.metric-card.purple:before { background:#10b981; } .metric-card.orange:before { background:#f59e0b; } .metric-card.red:before { background:#ef4444; } .metric-card.green:before { background:#10b981; }
-.metric-label { color:#7c879b; font-size:12px; font-weight:600; margin-bottom:13px; }
+.metric-card.green:before { background:#10b981; } .metric-card.orange:before { background:#f59e0b; } .metric-card.red:before { background:#ef4444; } .metric-card.green:before { background:#10b981; }
+.metric-label { color:#526078; font-size:11px; font-weight:700; margin-bottom:13px; letter-spacing:.2px; }
 .metric-value { font-family:'Manrope',sans-serif; font-size:31px; font-weight:800; color:#172033; line-height:1.05; }
-.metric-note { color:#9aa3b3; font-size:11px; margin-top:10px; }
+.metric-note { color:#64748b; font-size:11px; margin-top:10px; }
 .panel { background:#fff; border:1px solid #e9edf5; border-radius:16px; padding:20px 22px; box-shadow:0 3px 14px rgba(22,34,66,.025); }
+[data-testid="stVerticalBlockBorderWrapper"] { background:#ffffff; border:1px solid #e3eaf4; border-radius:16px; padding:1rem 1.1rem; box-shadow:0 4px 18px rgba(22,34,66,.035); }
+[data-testid="stVerticalBlockBorderWrapper"] h2, [data-testid="stVerticalBlockBorderWrapper"] h3 { color:#172033 !important; }
+[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMetricValue"] { color:#172033 !important; }
 .status-pill { display:inline-block; border-radius:20px; padding:5px 10px; font-size:11px; font-weight:700; white-space:nowrap; }
 .planning { color:#596579; background:#eef1f6; } .active { color:#2563eb; background:#e8f0ff; }
 .attention { color:#b45309; background:#fff1d6; } .paused { color:#6b7280; background:#f1f2f5; } .done { color:#047857; background:#dff8ed; }
@@ -398,12 +401,13 @@ if st.session_state.get("dark_mode", False):
     [data-testid="stMain"] .block-container { color:#e2e8f0; }
     h1, h2, h3, h4, p, label, .stMarkdown, [data-testid="stCaptionContainer"] { color:#e2e8f0 !important; }
     .page-eyebrow { color:#60a5fa !important; }
-    .page-subtitle, .small-muted, .metric-label, .metric-note { color:#a8b5c9 !important; }
+    .page-subtitle, .small-muted, .metric-label, .metric-note { color:#c0ccdd !important; }
     .metric-card, .panel, div[data-testid="stForm"], div[data-testid="stExpander"],
-    div[data-testid="stMetric"], div[data-testid="stDataFrame"], [data-testid="stAlert"] {
+    [data-testid="stVerticalBlockBorderWrapper"], div[data-testid="stMetric"], div[data-testid="stDataFrame"], [data-testid="stAlert"] {
       background:#1e293b !important; border-color:#334155 !important; color:#e2e8f0 !important;
     }
     .metric-value { color:#f8fafc !important; }
+[data-testid="stVerticalBlockBorderWrapper"] h2, [data-testid="stVerticalBlockBorderWrapper"] h3, [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMetricValue"] { color:#f8fafc !important; }
     input, textarea, [data-baseweb="select"] > div, [data-baseweb="popover"] {
       background:#111c31 !important; color:#f1f5f9 !important; border-color:#475569 !important;
     }
