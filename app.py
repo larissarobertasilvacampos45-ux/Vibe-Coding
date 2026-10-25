@@ -293,6 +293,17 @@ st.markdown("""
 html, body, [class*="css"] { font-family:'DM Sans',sans-serif; }
 .stApp { background:#f3f7fc; color:var(--ink); }
 header[data-testid="stHeader"] { background:transparent !important; }
+/* Mantém o controle para reabrir a navegação visível quando a sidebar estiver recolhida. */
+[data-testid="stSidebarCollapsedControl"] {
+  display:flex !important; visibility:visible !important; opacity:1 !important;
+}
+[data-testid="stSidebarCollapsedControl"] button {
+  background:#132541 !important; color:#ffffff !important;
+  border:1px solid #284264 !important; border-radius:8px !important;
+}
+[data-testid="stSidebarCollapsedControl"] button svg {
+  color:#ffffff !important; fill:#ffffff !important; stroke:#ffffff !important;
+}
 [data-testid="stSidebar"] { width:252px !important; min-width:252px !important; background:#132541 !important; border-right:1px solid #203553; }
 [data-testid="stSidebar"] > div { width:252px !important; }
 [data-testid="stSidebar"] * { color:#bacfe8; }
