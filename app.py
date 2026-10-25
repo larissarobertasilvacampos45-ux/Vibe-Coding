@@ -317,6 +317,27 @@ h3 { font-size:16px !important; font-weight:700 !important; }
 .status-pill { display:inline-block; border-radius:20px; padding:5px 10px; font-size:11px; font-weight:700; white-space:nowrap; }
 .planning { color:#596579; background:#eef1f6; } .active { color:#2563eb; background:#e8f0ff; }
 .attention { color:#b45309; background:#fff1d6; } .paused { color:#6b7280; background:#f1f2f5; } .done { color:#047857; background:#dff8ed; }
+/* Contraste explícito dos campos e rótulos no modo claro */
+[data-testid="stMain"] [data-testid="stWidgetLabel"],
+[data-testid="stMain"] [data-testid="stWidgetLabel"] p,
+[data-testid="stMain"] [data-testid="stWidgetLabel"] label {
+  color:#475569 !important;
+}
+[data-testid="stMain"] textarea,
+[data-testid="stMain"] input,
+[data-testid="stMain"] [data-baseweb="textarea"] > div,
+[data-testid="stMain"] [data-baseweb="input"] > div {
+  background:#ffffff !important;
+  color:#172033 !important;
+  -webkit-text-fill-color:#172033 !important;
+  border-color:#cbd5e1 !important;
+}
+[data-testid="stMain"] textarea::placeholder,
+[data-testid="stMain"] input::placeholder {
+  color:#8491a5 !important;
+  -webkit-text-fill-color:#8491a5 !important;
+  opacity:1 !important;
+}
 .stButton > button { border-radius:9px; font-weight:650; min-height:40px; }
 .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] { background:#3b82f6; border-color:#3b82f6; }
 div[data-testid="stForm"] { background:#fff; border:1px solid #e8edf4; border-radius:14px; padding:18px; }
