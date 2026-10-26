@@ -24,6 +24,19 @@ def render_public_demo():
     from datetime import timedelta
 
     today = date.today()
+
+    def demo_demo_risk_level(probability, impact):
+        score = {"Baixa": 1, "Média": 2, "Alta": 3}[probability] * {"Baixo": 1, "Médio": 2, "Alto": 3}[impact]
+        return "Alto" if score >= 6 else ("Médio" if score >= 3 else "Baixo")
+
+    def demo_demo_fmt_date(value):
+        if not value:
+            return "—"
+        try:
+            return date.fromisoformat(str(value)[:10]).strftime("%d/%m/%Y")
+        except ValueError:
+            return str(value)
+
     projects_demo = pd.DataFrame([
         {"id": "demo-1", "name": "Implantação do CRM", "owner": "Marina Costa", "status": "Em andamento", "progress": 72, "start_date": (today-timedelta(days=35)).isoformat(), "end_date": (today+timedelta(days=8)).isoformat(), "description": "Centralizar o relacionamento com clientes e padronizar o processo comercial."},
         {"id": "demo-2", "name": "Portal de atendimento", "owner": "Rafael Lima", "status": "Atenção", "progress": 48, "start_date": (today-timedelta(days=28)).isoformat(), "end_date": (today+timedelta(days=3)).isoformat(), "description": "Reunir solicitações e acompanhar o atendimento em um único portal."},
@@ -64,7 +77,7 @@ def render_public_demo():
     completed = int((projects_demo["status"] == "Concluído").sum())
     active = int(projects_demo["status"].isin(["Em andamento", "Atenção"]).sum())
     overdue = int(((pd.to_datetime(projects_demo["end_date"]).dt.date < today) & (projects_demo["status"] != "Concluído")).sum())
-    high_risks = sum(risk_level(r["probability"], r["impact"]) == "Alto" and r["status"] != "Resolvido" for _, r in risks_demo.iterrows())
+    high_risks = sum(demo_risk_level(r["probability"], r["impact"]) == "Alto" and r["status"] != "Resolvido" for _, r in risks_demo.iterrows())
     if page == "Visão Geral":
         st.title("Visão Geral")
         st.caption("Acompanhe resultados, antecipe prazos e identifique prioridades do portfólio.")
@@ -87,7 +100,7 @@ def render_public_demo():
             agenda = projects_demo[projects_demo["status"] != "Concluído"].sort_values("end_date")
             for _, p in agenda.iterrows():
                 st.markdown(f"**{p['name']}**")
-                st.caption(f"{fmt_date(p['end_date'])} · {p['status']} · {int(p['progress'])}% concluído")
+                st.caption(f"{demo_fmt_date(p['end_date'])} · {p['status']} · {int(p['progress'])}% concluído")
                 st.progress(int(p["progress"])/100)
             st.markdown("</div>", unsafe_allow_html=True)
         st.subheader("Alertas e prioridades")
@@ -112,8 +125,8 @@ def render_public_demo():
                 st.write(p["description"])
                 c1,c2,c3 = st.columns(3)
                 c1.caption(f"**Responsável**\n\n{p['owner']}")
-                c2.caption(f"**Início**\n\n{fmt_date(p['start_date'])}")
-                c3.caption(f"**Prazo**\n\n{fmt_date(p['end_date'])}")
+                c2.caption(f"**Início**\n\n{demo_fmt_date(p['start_date'])}")
+                c3.caption(f"**Prazo**\n\n{demo_fmt_date(p['end_date'])}")
                 st.progress(int(p["progress"])/100, text=f"Progresso: {int(p['progress'])}%")
     elif page == "Riscos":
         st.title("Riscos e impedimentos")
@@ -123,7 +136,7 @@ def render_public_demo():
         c2.metric("Em aberto", int((risks_demo["status"] != "Resolvido").sum()))
         c3.metric("Nível alto", high_risks)
         for _, r in risks_demo.iterrows():
-            level = risk_level(r["probability"], r["impact"])
+            level = demo_risk_level(r["probability"], r["impact"])
             with st.expander(f"{r['title']} · {r['project_name']} · Nível {level}"):
                 st.write(r["description"])
                 a,b,c = st.columns(3)
@@ -141,7 +154,7 @@ def render_public_demo():
         for _, p in agenda.iterrows():
             with st.container(border=True):
                 a,b,c = st.columns([1,4,2])
-                a.markdown(f"**{fmt_date(p['end_date'])}**")
+                a.markdown(f"**{demo_fmt_date(p['end_date'])}**")
                 b.markdown(f"**{p['name']}**")
                 b.caption(f"Responsável: {p['owner']}")
                 c.markdown(f"**{p['status']}**")
