@@ -412,7 +412,20 @@ section[data-testid="stMain"]:has(.nexo-dashboard) > div[data-testid="stMainBloc
 .nexo-progress-fill { height:100%; background:#14997a; border-radius:99px; }
 .nexo-agenda-panel { height:248px; }
 .nexo-panel-subtitle { margin-bottom:12px !important; }
-.nexo-agenda-list { margin-top:13px; }
+.nexo-agenda-list {
+  margin-top:13px;
+  max-height:135px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:6px;
+  box-sizing:border-box;
+  scrollbar-width:thin;
+  scrollbar-color:#b8c8dc transparent;
+}
+.nexo-agenda-list::-webkit-scrollbar { width:6px; }
+.nexo-agenda-list::-webkit-scrollbar-track { background:transparent; }
+.nexo-agenda-list::-webkit-scrollbar-thumb { background:#b8c8dc; border-radius:8px; }
+.nexo-agenda-list::-webkit-scrollbar-thumb:hover { background:#8da5c2; }
 .nexo-agenda-row { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #edf1f7; min-height:48px; }
 .nexo-agenda-row:last-child { border-bottom:0; }
 .nexo-date-tile { flex-shrink:0; width:48px; height:42px; border-radius:8px; background:#e3f0ff; color:#2563eb; display:flex; flex-direction:column; align-items:center; justify-content:center; }
