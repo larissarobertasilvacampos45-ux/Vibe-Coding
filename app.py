@@ -18,6 +18,154 @@ APP_URL = "https://larissarobertasilvacampos45-ux-vibe-coding-app-zfk4fm.streaml
 RESET_PASSWORD_URL = "https://larissarobertasilvacampos45-ux.github.io/Vibe-Coding/reset-password.html"
 
 
+
+def render_public_demo():
+    """Demonstração pública isolada: dados fictícios locais, sem cliente Supabase."""
+    from datetime import timedelta
+
+    st.set_page_config(
+        page_title="Nexo | Demonstração",
+        page_icon="◈",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    today = date.today()
+    projects_demo = pd.DataFrame([
+        {"id": "demo-1", "name": "Implantação do CRM", "owner": "Marina Costa", "status": "Em andamento", "progress": 72, "start_date": (today-timedelta(days=35)).isoformat(), "end_date": (today+timedelta(days=8)).isoformat(), "description": "Centralizar o relacionamento com clientes e padronizar o processo comercial."},
+        {"id": "demo-2", "name": "Portal de atendimento", "owner": "Rafael Lima", "status": "Atenção", "progress": 48, "start_date": (today-timedelta(days=28)).isoformat(), "end_date": (today+timedelta(days=3)).isoformat(), "description": "Reunir solicitações e acompanhar o atendimento em um único portal."},
+        {"id": "demo-3", "name": "Painel de indicadores", "owner": "Camila Souza", "status": "Planejamento", "progress": 15, "start_date": (today-timedelta(days=5)).isoformat(), "end_date": (today+timedelta(days=24)).isoformat(), "description": "Disponibilizar indicadores operacionais para apoiar decisões."},
+        {"id": "demo-4", "name": "Automação de relatórios", "owner": "Pedro Alves", "status": "Concluído", "progress": 100, "start_date": (today-timedelta(days=50)).isoformat(), "end_date": (today-timedelta(days=4)).isoformat(), "description": "Reduzir tarefas manuais na consolidação de relatórios semanais."},
+        {"id": "demo-5", "name": "Revisão de processos", "owner": "Ana Martins", "status": "Pausado", "progress": 30, "start_date": (today-timedelta(days=18)).isoformat(), "end_date": (today+timedelta(days=18)).isoformat(), "description": "Mapear oportunidades de melhoria nos processos internos."},
+    ])
+    risks_demo = pd.DataFrame([
+        {"id":"risk-1","project_id":"demo-1","project_name":"Implantação do CRM","title":"Baixa adesão dos usuários","description":"Parte da equipe pode manter o processo anterior durante a transição.","probability":"Média","impact":"Alto","mitigation":"Planejar treinamento por equipe e acompanhar a adoção.","status":"Em tratamento"},
+        {"id":"risk-2","project_id":"demo-2","project_name":"Portal de atendimento","title":"Atraso na validação","description":"A aprovação das telas pode afetar o cronograma.","probability":"Alta","impact":"Alto","mitigation":"Agendar validação com responsáveis e registrar decisões.","status":"Aberto"},
+        {"id":"risk-3","project_id":"demo-3","project_name":"Painel de indicadores","title":"Fonte de dados incompleta","description":"Alguns indicadores ainda precisam de definição de origem.","probability":"Baixa","impact":"Médio","mitigation":"Validar fontes com as áreas responsáveis.","status":"Resolvido"},
+    ])
+    st.markdown("""
+    <style>
+    :root {--ink:#172133;--muted:#5e6e85;--line:#dee5f0;--blue:#2563eb;--navy:#132541;--green:#14997a}
+    .stApp{background:#f3f7fc;color:var(--ink)}
+    [data-testid="stSidebar"]{background:#132541}
+    [data-testid="stSidebar"] *{color:#d5e3f5}
+    .demo-brand{font-size:29px;font-weight:800;letter-spacing:-1px;color:#fff}
+    .demo-sub{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:#adc9eb}
+    .demo-banner{background:#e8f2ff;border:1px solid #bfd7ff;border-radius:12px;padding:12px 16px;color:#1e3a5f;margin:8px 0 22px}
+    .demo-card{background:#fff;border:1px solid #dee5f0;border-radius:14px;padding:18px;min-height:112px;box-shadow:0 4px 16px #1f385c0d}
+    .demo-label{font-size:11px;color:#5e6e85;font-weight:700;letter-spacing:.5px}
+    .demo-value{font-size:30px;font-weight:800;color:#172133;margin-top:8px}
+    .demo-note{font-size:12px;color:#5e6e85;margin-top:4px}
+    .demo-panel{background:#fff;border:1px solid #dee5f0;border-radius:14px;padding:20px;margin-bottom:16px}
+    </style>
+    """, unsafe_allow_html=True)
+    with st.sidebar:
+        st.markdown("<div class='demo-brand'>◈ nexo</div><div class='demo-sub'>project workspace</div><br>", unsafe_allow_html=True)
+        st.caption("DEMONSTRAÇÃO PÚBLICA")
+        page = st.radio("Navegação", ["Visão Geral", "Projetos", "Riscos", "Agendas e entregas"], label_visibility="collapsed", key="demo_navigation")
+        st.markdown("---")
+        st.caption("Dados fictícios · Somente leitura")
+        st.markdown("Explore as telas sem criar conta. Nenhuma informação é enviada ou salva.")
+    st.markdown("<div class='demo-banner'><strong>Modo demonstração</strong> · Você está visualizando um cenário fictício. Edições e gravações estão desativadas.</div>", unsafe_allow_html=True)
+    total = len(projects_demo)
+    completed = int((projects_demo["status"] == "Concluído").sum())
+    active = int(projects_demo["status"].isin(["Em andamento", "Atenção"]).sum())
+    overdue = int(((pd.to_datetime(projects_demo["end_date"]).dt.date < today) & (projects_demo["status"] != "Concluído")).sum())
+    high_risks = sum(risk_level(r["probability"], r["impact"]) == "Alto" and r["status"] != "Resolvido" for _, r in risks_demo.iterrows())
+    if page == "Visão Geral":
+        st.title("Visão Geral")
+        st.caption("Acompanhe resultados, antecipe prazos e identifique prioridades do portfólio.")
+        cards = [( "PROJETOS", total, f"{completed} concluído(s)"), ("EM ANDAMENTO", active, "Execução ou atenção"), ("PRAZOS VENCIDOS", overdue, "Projetos não concluídos"), ("RISCOS ALTOS", high_risks, "Exigem acompanhamento")]
+        cols = st.columns(4)
+        for col, (label, value, note) in zip(cols, cards):
+            with col:
+                st.markdown(f"<div class='demo-card'><div class='demo-label'>{label}</div><div class='demo-value'>{value:02d}</div><div class='demo-note'>{note}</div></div>", unsafe_allow_html=True)
+        st.write("")
+        left, right = st.columns([1.15, 1])
+        with left:
+            st.markdown("<div class='demo-panel'>", unsafe_allow_html=True)
+            st.subheader("Saúde do portfólio")
+            status_counts = projects_demo["status"].value_counts().reindex(STATUSES, fill_value=0)
+            st.bar_chart(status_counts)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with right:
+            st.markdown("<div class='demo-panel'>", unsafe_allow_html=True)
+            st.subheader("Próximas entregas")
+            agenda = projects_demo[projects_demo["status"] != "Concluído"].sort_values("end_date")
+            for _, p in agenda.iterrows():
+                st.markdown(f"**{p['name']}**")
+                st.caption(f"{fmt_date(p['end_date'])} · {p['status']} · {int(p['progress'])}% concluído")
+                st.progress(int(p["progress"])/100)
+            st.markdown("</div>", unsafe_allow_html=True)
+        st.subheader("Alertas e prioridades")
+        if high_risks:
+            st.warning(f"{high_risks} risco(s) de nível alto estão em aberto ou em tratamento.")
+        if overdue:
+            st.info(f"{overdue} projeto(s) não concluído(s) estão com prazo vencido no cenário fictício.")
+        st.success("Os dados desta tela são exemplos criados para a demonstração.")
+    elif page == "Projetos":
+        st.title("Projetos")
+        st.caption("Consulte iniciativas, responsáveis, andamento e prazos.")
+        status_filter = st.selectbox("Filtrar por status", ["Todos os status"] + STATUSES)
+        search = st.text_input("Buscar projeto", placeholder="Nome ou responsável")
+        view = projects_demo.copy()
+        if status_filter != "Todos os status":
+            view = view[view["status"] == status_filter]
+        if search.strip():
+            view = view[view["name"].str.contains(search, case=False, na=False) | view["owner"].str.contains(search, case=False, na=False)]
+        st.caption(f"{len(view)} projeto(s) encontrado(s)")
+        for _, p in view.iterrows():
+            with st.expander(f"{p['name']} · {p['status']} · {int(p['progress'])}%"):
+                st.write(p["description"])
+                c1,c2,c3 = st.columns(3)
+                c1.caption(f"**Responsável**\n\n{p['owner']}")
+                c2.caption(f"**Início**\n\n{fmt_date(p['start_date'])}")
+                c3.caption(f"**Prazo**\n\n{fmt_date(p['end_date'])}")
+                st.progress(int(p["progress"])/100, text=f"Progresso: {int(p['progress'])}%")
+    elif page == "Riscos":
+        st.title("Riscos e impedimentos")
+        st.caption("Avalie os riscos, seus impactos e as respostas planejadas.")
+        c1,c2,c3 = st.columns(3)
+        c1.metric("Riscos registrados", len(risks_demo))
+        c2.metric("Em aberto", int((risks_demo["status"] != "Resolvido").sum()))
+        c3.metric("Nível alto", high_risks)
+        for _, r in risks_demo.iterrows():
+            level = risk_level(r["probability"], r["impact"])
+            with st.expander(f"{r['title']} · {r['project_name']} · Nível {level}"):
+                st.write(r["description"])
+                a,b,c = st.columns(3)
+                a.caption(f"**Probabilidade**\n\n{r['probability']}")
+                b.caption(f"**Impacto**\n\n{r['impact']}")
+                c.caption(f"**Situação**\n\n{r['status']}")
+                st.markdown("**Plano de mitigação**")
+                st.write(r["mitigation"])
+    else:
+        st.title("Agendas e entregas")
+        st.caption("Acompanhe prazos e o progresso das iniciativas.")
+        agenda = projects_demo.copy()
+        agenda["_deadline"] = pd.to_datetime(agenda["end_date"], errors="coerce").dt.date
+        agenda = agenda.sort_values("_deadline")
+        for _, p in agenda.iterrows():
+            with st.container(border=True):
+                a,b,c = st.columns([1,4,2])
+                a.markdown(f"**{fmt_date(p['end_date'])}**")
+                b.markdown(f"**{p['name']}**")
+                b.caption(f"Responsável: {p['owner']}")
+                c.markdown(f"**{p['status']}**")
+                c.caption(f"Progresso: {int(p['progress'])}%")
+                st.progress(int(p["progress"])/100)
+    st.markdown("<div style='border-top:1px solid #dee5f0;margin-top:35px;padding-top:16px;color:#8794a8;font-size:11px'>NEXO · DEMONSTRAÇÃO PÚBLICA · CENÁRIO FICTÍCIO · SOMENTE LEITURA</div>", unsafe_allow_html=True)
+
+
+# A rota pública termina antes da criação de qualquer cliente Supabase.
+try:
+    if st.query_params.get("demo") == "1":
+        render_public_demo()
+        st.stop()
+except Exception:
+    # Parâmetros ausentes ou incompatíveis mantêm o fluxo autenticado original.
+    pass
+
+
 def get_supabase():
     """Cria um cliente Supabase por sessão usando apenas a chave pública."""
     try:
