@@ -25,11 +25,11 @@ def render_public_demo():
 
     today = date.today()
 
-    def demo_demo_risk_level(probability, impact):
+    def demo_risk_level(probability, impact):
         score = {"Baixa": 1, "Média": 2, "Alta": 3}[probability] * {"Baixo": 1, "Médio": 2, "Alto": 3}[impact]
         return "Alto" if score >= 6 else ("Médio" if score >= 3 else "Baixo")
 
-    def demo_demo_fmt_date(value):
+    def demo_fmt_date(value):
         if not value:
             return "—"
         try:
