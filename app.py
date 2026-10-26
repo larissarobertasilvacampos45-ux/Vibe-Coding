@@ -23,12 +23,6 @@ def render_public_demo():
     """Demonstração pública isolada: dados fictícios locais, sem cliente Supabase."""
     from datetime import timedelta
 
-    st.set_page_config(
-        page_title="Nexo | Demonstração",
-        page_icon="◈",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
     today = date.today()
     projects_demo = pd.DataFrame([
         {"id": "demo-1", "name": "Implantação do CRM", "owner": "Marina Costa", "status": "Em andamento", "progress": 72, "start_date": (today-timedelta(days=35)).isoformat(), "end_date": (today+timedelta(days=8)).isoformat(), "description": "Centralizar o relacionamento com clientes e padronizar o processo comercial."},
