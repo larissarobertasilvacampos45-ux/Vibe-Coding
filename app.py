@@ -164,13 +164,10 @@ def render_public_demo():
 
 
 # A rota pública termina antes da criação de qualquer cliente Supabase.
-try:
-    if st.query_params.get("demo") == "1":
-        render_public_demo()
-        st.stop()
-except Exception:
-    # Parâmetros ausentes ou incompatíveis mantêm o fluxo autenticado original.
-    pass
+# Se a demonstração falhar, o erro é exibido; ela nunca cai no fluxo privado.
+if st.query_params.get("demo") == "1":
+    render_public_demo()
+    st.stop()
 
 
 def get_supabase():
