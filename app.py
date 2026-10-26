@@ -308,9 +308,10 @@ header[data-testid="stHeader"] { background:transparent !important; }
   color:#ffffff !important; fill:#ffffff !important; stroke:#ffffff !important;
   opacity:1 !important;
 }
-/* Não forçar largura na sidebar recolhida: o Streamlit deve liberar o espaço do conteúdo. */
-[data-testid="stSidebar"] { width:252px !important; min-width:252px !important; background:#132541 !important; border-right:1px solid #203553; }
-[data-testid="stSidebar"] > div { width:252px !important; }
+/* A largura fixa vale somente enquanto a sidebar estiver aberta; recolhida, ela libera espaço ao conteúdo. */
+[data-testid="stSidebar"] { background:#132541 !important; border-right:1px solid #203553; }
+[data-testid="stSidebar"][aria-expanded="true"] { width:252px !important; min-width:252px !important; }
+[data-testid="stSidebar"][aria-expanded="true"] > div { width:252px !important; }
 [data-testid="stSidebar"] * { color:#bacfe8; }
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color:#b8cce5; }
 [data-testid="stSidebar"] .stRadio label { padding:7px 10px; border-radius:9px; }
@@ -440,7 +441,7 @@ section[data-testid="stMain"]:has(.nexo-dashboard) > div[data-testid="stMainBloc
   .nexo-updated-label { white-space:normal; }
 }
 @media (max-width:768px) {
-  [data-testid="stSidebar"] { width:280px !important; min-width:280px !important; }
+  [data-testid="stSidebar"][aria-expanded="true"] { width:280px !important; min-width:280px !important; }
   .block-container:has(.nexo-dashboard) { width:calc(100% - 28px) !important; margin-left:14px !important; padding-top:1.2rem !important; }
   .nexo-kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
   .nexo-kpi { padding:14px 12px; }
