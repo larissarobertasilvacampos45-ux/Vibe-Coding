@@ -2,36 +2,70 @@ import os
 from datetime import date, datetime
 from typing import Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
 
 app = FastAPI(title="Nexo | Gestão de Projetos", version="2.0.0")
-PROJECT_STATUSES = ["Planejamento", "Em andamento", "Atenção", "Pausado", "Concluído"]
 
 
 def supabase_client() -> Client:
     url = os.getenv("SUPABASE_URL", "").strip()
-    key = (os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip()
-           or os.getenv("SUPABASE_ANON_KEY", "").strip())
+    key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "").strip() or os.getenv("SUPABASE_ANON_KEY", "").strip()
     if not url or not key:
         raise HTTPException(503, "Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY na Vercel.")
     return create_client(url, key)
 
 
-def user_context(authorization: str | None = Header(default=None)):
-    if not authorization or not authorization.lower().startswith("bearer "):
+def cookie_options():
+    return {
+        "httponly": True,
+        "secure": os.getenv("VERCEL") == "1" or os.getenv("ENVIRONMENT") == "production",
+        "samesite": "lax",
+        "path": "/",
+    }
+
+
+def set_session_cookies(response: Response, session):
+    opts = cookie_options()
+    response.set_cookie("nexo_access", session.access_token, max_age=3600, **opts)
+    response.set_cookie("nexo_refresh", session.refresh_token, max_age=60 * 60 * 24 * 30, **opts)
+
+
+def clear_session_cookies(response: Response):
+    opts = cookie_options()
+    response.delete_cookie("nexo_access", path=opts["path"], secure=opts["secure"], httponly=True, samesite=opts["samesite"])
+    response.delete_cookie("nexo_refresh", path=opts["path"], secure=opts["secure"], httponly=True, samesite=opts["samesite"])
+
+
+def user_context(request: Request, response: Response):
+    access = request.cookies.get("nexo_access")
+    refresh = request.cookies.get("nexo_refresh")
+    if not access and not refresh:
         raise HTTPException(401, "Faça login para continuar.")
-    token = authorization.split(" ", 1)[1].strip()
     client = supabase_client()
-    try:
-        user = client.auth.get_user(token).user
-        if not user:
-            raise ValueError("Sessão inválida")
-        client.postgrest.auth(token)
-        return client, user
-    except Exception:
+    user = None
+    if access:
+        try:
+            user = client.auth.get_user(access).user
+        except Exception:
+            user = None
+    if not user and refresh:
+        try:
+            refreshed = client.auth.refresh_session(refresh)
+            if refreshed.session and refreshed.user:
+                set_session_cookies(response, refreshed.session)
+                access = refreshed.session.access_token
+                user = refreshed.user
+        except Exception:
+            user = None
+    if not user or not access:
+        clear_session_cookies(response)
         raise HTTPException(401, "Sua sessão expirou. Entre novamente.")
+    # Encaminha o JWT do usuário para o PostgREST. As políticas RLS do banco
+    # continuam controlando quais registros podem ser consultados ou alterados.
+    client.postgrest.auth(access)
+    return client, user
 
 
 class LoginBody(BaseModel):
@@ -41,10 +75,6 @@ class LoginBody(BaseModel):
 
 class ResetBody(BaseModel):
     email: str
-
-
-class RefreshBody(BaseModel):
-    refresh_token: str
 
 
 class PasswordBody(BaseModel):
@@ -83,35 +113,31 @@ def health():
 
 
 @app.post("/api/auth/login")
-def login(body: LoginBody):
+def login(body: LoginBody, response: Response):
+    client = supabase_client()
     try:
-        result = supabase_client().auth.sign_in_with_password(
-            {"email": body.email, "password": body.password}
-        )
+        result = client.auth.sign_in_with_password({"email": body.email, "password": body.password})
         if not result.session or not result.user:
             raise ValueError("Login inválido")
-        return {
-            "access_token": result.session.access_token,
-            "refresh_token": result.session.refresh_token,
-            "user": {"id": result.user.id, "email": result.user.email or body.email},
-        }
+        set_session_cookies(response, result.session)
+        return {"user": {"id": result.user.id, "email": result.user.email or body.email}}
     except Exception:
         raise HTTPException(401, "Não foi possível entrar. Confira seu e-mail e sua senha.")
 
 
-@app.post("/api/auth/refresh")
-def refresh(body: RefreshBody):
-    try:
-        result = supabase_client().auth.refresh_session(body.refresh_token)
-        if not result.session or not result.user:
-            raise ValueError("Sessão inválida")
-        return {
-            "access_token": result.session.access_token,
-            "refresh_token": result.session.refresh_token,
-            "user": {"id": result.user.id, "email": result.user.email or ""},
-        }
-    except Exception:
-        raise HTTPException(401, "Sua sessão expirou. Entre novamente.")
+@app.post("/api/auth/logout")
+def logout(request: Request, response: Response):
+    access = request.cookies.get("nexo_access")
+    refresh = request.cookies.get("nexo_refresh")
+    if access and refresh:
+        try:
+            client = supabase_client()
+            client.auth.set_session(access, refresh)
+            client.auth.sign_out()
+        except Exception:
+            pass
+    clear_session_cookies(response)
+    return {"message": "Sessão encerrada."}
 
 
 @app.post("/api/auth/reset")
@@ -163,8 +189,7 @@ def create_project(body: ProjectBody, ctx=Depends(user_context)):
         raise HTTPException(422, "O prazo não pode ser anterior à data de início.")
     end_date = body.end_date.isoformat() if body.end_date else None
     data = {
-        "name": body.name.strip(), "owner": body.owner.strip() or None,
-        "owner_id": user.id,
+        "name": body.name.strip(), "owner": body.owner.strip() or None, "owner_id": user.id,
         "start_date": body.start_date.isoformat() if body.start_date else None,
         "end_date": end_date, "due_date": end_date, "status": body.status,
         "progress": body.progress, "description": body.description.strip() or None,
@@ -205,6 +230,7 @@ def edit_project(project_id: str, body: ProjectBody, ctx=Depends(user_context)):
 def remove_project(project_id: str, ctx=Depends(user_context)):
     client, _ = ctx
     try:
+        # Protege tarefas e registros relacionados que a interface não gerencia.
         for table in ("tasks", "project_updates", "scope_changes"):
             related = client.table(table).select("id").eq("project_id", project_id).limit(1).execute()
             if related.data:
@@ -224,10 +250,10 @@ def remove_project(project_id: str, ctx=Depends(user_context)):
 def risks(ctx=Depends(user_context)):
     client, _ = ctx
     try:
-        rs = client.table("risks").select("*").order("created_at", desc=True).execute().data or []
-        ps = client.table("projects").select("id,name").execute().data or []
-        names = {str(p["id"]): p.get("name") or "" for p in ps}
-        return [{**r, "project_name": names.get(str(r.get("project_id")), "")} for r in rs]
+        risk_rows = client.table("risks").select("*").order("created_at", desc=True).execute().data or []
+        project_rows = client.table("projects").select("id,name").execute().data or []
+        names = {str(p["id"]): p.get("name") or "" for p in project_rows}
+        return [{**r, "project_name": names.get(str(r.get("project_id")), "")} for r in risk_rows]
     except Exception:
         raise HTTPException(400, "Não foi possível carregar os riscos.")
 
@@ -238,11 +264,9 @@ def create_risk(body: RiskBody, ctx=Depends(user_context)):
     mitigation = body.mitigation.strip() or None
     data = {
         "project_id": body.project_id, "title": body.title.strip(),
-        "description": body.description.strip() or None,
-        "probability": body.probability, "impact": body.impact,
-        "mitigation": mitigation, "mitigation_plan": mitigation,
-        "status": body.status,
-        "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "description": body.description.strip() or None, "probability": body.probability,
+        "impact": body.impact, "mitigation": mitigation, "mitigation_plan": mitigation,
+        "status": body.status, "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     try:
         result = client.table("risks").insert(data).execute()
@@ -256,8 +280,7 @@ def edit_risk(risk_id: str, body: RiskStatusBody, ctx=Depends(user_context)):
     client, _ = ctx
     try:
         result = client.table("risks").update({
-            "status": body.status,
-            "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "status": body.status, "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z"
         }).eq("id", risk_id).select("*").execute()
         if not result.data:
             raise HTTPException(404, "Risco não encontrado ou sem permissão para alterá-lo.")
