@@ -4,3 +4,9 @@ __pycache__/
 venv/
 projetos.db
 .streamlit/secrets.toml
+
+.env
+.env.*
+!.env.example
+.vercel/
+node_modules/
