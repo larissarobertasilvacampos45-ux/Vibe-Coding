@@ -196,7 +196,7 @@ def create_project(body: ProjectBody, ctx=Depends(user_context)):
         "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     try:
-        result = client.table("projects").insert(data).execute()
+        result = client.table("projects").insert(data).select("*").execute()
         return result.data[0]
     except Exception:
         raise HTTPException(400, "Não foi possível cadastrar o projeto. Verifique os dados e as permissões.")
@@ -269,7 +269,7 @@ def create_risk(body: RiskBody, ctx=Depends(user_context)):
         "status": body.status, "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     try:
-        result = client.table("risks").insert(data).execute()
+        result = client.table("risks").insert(data).select("*").execute()
         return result.data[0]
     except Exception:
         raise HTTPException(400, "Não foi possível registrar o risco. Verifique o projeto e suas permissões.")
