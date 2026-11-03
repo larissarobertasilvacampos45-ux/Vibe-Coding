@@ -133,7 +133,7 @@ def logout(request: Request, response: Response):
         try:
             client = supabase_client()
             client.auth.set_session(access, refresh)
-            client.auth.sign_out()
+            client.auth.sign_out(options={"scope": "local"})
         except Exception:
             pass
     clear_session_cookies(response)
